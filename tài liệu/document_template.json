@@ -1,0 +1,11 @@
+[
+  {
+    "title": "Tên tài liệu",
+    "description": "Mô tả ngắn hiển thị ở danh sách",
+    "tags": [
+      "tag1",
+      "tag2"
+    ],
+    "content": "# Tiêu đề chính\n\nNội dung viết theo cú pháp Markdown.\n\n## Mục 1\n\nNội dung mục 1.\n\n```bash\necho \"Ví dụ code block\"\n```"
+  }
+]
