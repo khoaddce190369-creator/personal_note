@@ -10,10 +10,38 @@
 
   function mc() { return document.getElementById('mainContent'); }
 
+  function closeMobileMenu() {
+    var menu = document.getElementById('navMenu');
+    var burger = document.getElementById('navHamburger');
+    var backdrop = document.getElementById('navBackdrop');
+    if (menu && menu.classList.contains('open')) {
+      menu.classList.remove('open');
+      if (burger) {
+        burger.classList.remove('active');
+        burger.setAttribute('aria-expanded', 'false');
+      }
+      if (backdrop) backdrop.classList.remove('active');
+    }
+  }
+
+  function toggleMobileMenu() {
+    var menu = document.getElementById('navMenu');
+    var burger = document.getElementById('navHamburger');
+    var backdrop = document.getElementById('navBackdrop');
+    if (!menu) return;
+    var isOpen = menu.classList.toggle('open');
+    if (burger) {
+      burger.classList.toggle('active', isOpen);
+      burger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    }
+    if (backdrop) backdrop.classList.toggle('active', isOpen);
+  }
+
   /* ══════════════════════════════════════════
      NAVIGATION
      ══════════════════════════════════════════ */
   function navigate(view, params) {
+    closeMobileMenu();
     params = params || {};
     currentView = view;
     currentFilters = params;
@@ -288,6 +316,33 @@
         URL.revokeObjectURL(url);
         Utils.showToast('Đã tải xuống file JSON.');
         break;
+
+      case 'toggle-menu':
+        toggleMobileMenu();
+        break;
+
+      case 'close-menu':
+        closeMobileMenu();
+        break;
+
+      case 'mobile-search':
+        closeMobileMenu();
+        navigate('cheatsheets');
+        setTimeout(function () {
+          var s = document.getElementById('csSearchInput');
+          if (s) {
+            s.focus();
+            try { s.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) {}
+          }
+        }, 120);
+        break;
+    }
+  });
+
+  // Close mobile menu when clicking outside navbar and backdrop
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('#topNavbar') && !e.target.closest('#navBackdrop')) {
+      closeMobileMenu();
     }
   });
 

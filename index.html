@@ -2,7 +2,8 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0e14">
   <meta name="description" content="Cyber Notes — Kho tra cứu kiến thức bảo mật và cheat sheets tổng hợp câu lệnh, payload pentest.">
   <title>Cyber Notes // Kho Kiến Thức &amp; Cheat Sheets</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,14 +14,14 @@
 <body>
 
   <!-- ═══ TOP NAV BAR ═══ -->
-  <header class="navbar">
+  <header class="navbar" id="topNavbar">
     <div class="nav-brand" data-action="navigate" data-view="dashboard">
       <span class="brand-hex">#</span>
       <span class="brand-text">Cyber Notes</span>
       <span class="brand-tag">v4.0</span>
     </div>
 
-    <nav class="nav-menu">
+    <nav class="nav-menu" id="navMenu">
       <button class="nav-btn active" data-action="navigate" data-view="dashboard">Dashboard</button>
       <button class="nav-btn" data-action="navigate" data-view="knowledge">Tra cứu Kiến thức</button>
       <button class="nav-btn" data-action="navigate" data-view="cheatsheets">Cheat Sheets</button>
@@ -31,9 +32,21 @@
     </nav>
 
     <div class="nav-right">
-      <button class="shortcut-badge" title="Bấm phím Ctrl + K để tìm kiếm nhanh">Ctrl + K</button>
+      <button class="shortcut-badge desktop-only" title="Bấm phím Ctrl + K để tìm kiếm nhanh">Ctrl + K</button>
+      <button class="mobile-icon-btn mobile-only" data-action="mobile-search" title="Tìm kiếm" aria-label="Tìm kiếm">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+      </button>
+      <button class="hamburger-btn mobile-only" id="navHamburger" data-action="toggle-menu" aria-label="Menu điều hướng" aria-expanded="false">
+        <span class="bar"></span>
+        <span class="bar"></span>
+        <span class="bar"></span>
+      </button>
     </div>
   </header>
+  <div class="nav-backdrop" id="navBackdrop" data-action="toggle-menu"></div>
 
   <!-- ═══ MAIN APP CONTAINER ═══ -->
   <main class="main-content" id="mainContent">

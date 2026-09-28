@@ -129,10 +129,10 @@
       catKeys.forEach(function (k) {
         pills.push({ id: k, label: catMap[k] });
       });
-      pillsHtml = '<div class="filter-pills" style="margin-bottom:1rem;">' + pills.map(function (p) {
+      pillsHtml = '<div class="filter-pills-wrap"><div class="filter-pills" style="margin-bottom:.2rem;">' + pills.map(function (p) {
         var act = activeCategory === p.id ? ' active' : '';
         return '<button class="pill-btn' + act + '" data-action="know-filter" data-cat="' + p.id + '">' + p.label + '</button>';
-      }).join('') + '</div>';
+      }).join('') + '</div></div>';
     }
 
     var cardsHtml = '';
@@ -458,12 +458,12 @@
 
     var catCards = categories.map(function (c) {
       var count = Store.getEntries({ categoryId: c.id }).length;
-      return '<div class="card" style="display:flex;align-items:center;justify-content:space-between;padding:1.1rem 1.4rem;">'
-        + '<div>'
+      return '<div class="card cat-card-item">'
+        + '<div class="cat-card-info">'
           + '<h4 style="font-weight:600;font-size:1.05rem;color:var(--text-bright);">' + esc(c.name) + '</h4>'
           + '<p style="color:var(--text-secondary);font-size:.85rem;margin-top:.2rem;">' + esc(c.desc || 'Chưa có mô tả') + ' · <b style="color:var(--cyan);">' + count + ' ghi chú</b></p>'
         + '</div>'
-        + '<div style="display:flex;gap:.5rem;">'
+        + '<div class="cat-card-actions">'
           + '<button class="btn btn-sm btn-secondary" data-action="view-category" data-id="' + esc(c.id) + '">Xem</button>'
         + '</div>'
       + '</div>';
@@ -492,7 +492,7 @@
           + '<h1 class="main-heading">Sao Lưu &amp; Dữ Liệu</h1>'
         + '</div>'
 
-        + '<div class="stats-row" style="grid-template-columns:1fr 1fr;margin-bottom:1.5rem;">'
+        + '<div class="stats-row backup-cards-grid" style="margin-bottom:1.5rem;">'
           + '<div class="card" style="padding:1.6rem;">'
             + '<h3 style="font-size:1.15rem;color:var(--text-bright);margin-bottom:.5rem;">Khôi phục Dữ liệu Chuẩn Hóa</h3>'
             + '<p style="color:var(--text-secondary);font-size:.88rem;line-height:1.5;margin-bottom:1.2rem;">'
